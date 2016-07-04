@@ -1,7 +1,10 @@
-;; 中かっこ未対応
 (defun ci (arg)
   (interactive "sci: ")
-  (cond ((string= arg "(") (zap-from-to-char-paren))
+  (cond ((or (string= arg "(") ;; ")" "]" and  "}" are invalid in emacs lisp.
+	     (string= arg "{")
+	     ;; (string= arg "[")) ;; "[" is not ready, cuz idk how to use this in regexp
+	     )
+	 (zap-from-to-char-paren arg))
 	((string= arg "\"") (zap-from-to-char arg))
 	((string= arg "w") (kill-current-word))
 	) ;; end of cond
@@ -17,7 +20,7 @@
       (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
       (setq %beginning (match-end 0))
 
-      (cond ((string= arg "(") (setq arg ")"))) ;; ()に対応 ;; ただ(()とくると真ん中の()も消される -> zap-from-to-char-paren
+      ;; (cond ((string= arg "(") (setq arg ")"))) ;; -> zap-from-to-char-paren
 
       (search-forward arg)
       (goto-char %point)
@@ -31,36 +34,39 @@
     ) ;; end of let
   ) ;; end of func
 
-(defun zap-from-to-char-paren ()
-  (interactive)
-  (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren 0))
+(defun zap-from-to-char-paren (arg)
+  (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0) (%target nil))
+    (cond ((string= arg "(") (setq %target "[()]"))
+	  ((string= arg "{") (setq %target "[{}]"))
+	  ;; ((string= arg "[") (setq %target "[\\[\\]]")))
+	  )
     (catch 'end-of-search
       (while t
-	(cond ((<= %paren 0) ;; if
+	(cond ((<= %paren-n 0) ;; if
 	       (goto-char %beginning)
-	       (re-search-backward "[()]")
+	       (re-search-backward %target)
 	       (setq %beginning (match-beginning 0))
-	       (cond ((string= "(" (char-to-string (following-char))) (setq %paren (+ %paren 1)))
-		     (t (setq %paren (- %paren 1))))
+	       (cond ((string= arg (char-to-string (following-char))) (setq %paren-n (+ %paren-n 1)))
+		     (t (setq %paren-n (- %paren-n 1))))
 	       ) ;; if
 	      (t ;; else
 	       (goto-char %end)
-	       (re-search-forward "[()]")
+	       (re-search-forward %target)
 	       (setq %end (match-end 0))
-	       (cond ((string= "(" (char-to-string (preceding-char))) (setq %paren (+ %paren 1)))
-		     (t (setq %paren (- %paren 1))))
+	       (cond ((string= arg (char-to-string (preceding-char))) (setq %paren-n (+ %paren-n 1)))
+		     (t (setq %paren-n (- %paren-n 1))))
 	       ) ;; else
 	      )
 
-	;; (message "%d" %paren)
-	;; (sleep-for 5)
+	;; (message "%d" %paren-n) ;; debugging
+	;; (sleep-for 5) ;; debugging
 	
-	(cond ((= 0 %paren) (throw 'end-of-search t)))
+	(cond ((= 0 %paren-n) (throw 'end-of-search t)))
 	;; (throw 'end-of-search t)
 	)
       ) ;; end of catch
 
-    ;; (message "%d" %paren)
+    ;; (message "%d" %paren-n)
     
     (kill-region (+ %beginning 1) (- %end 1))
     (goto-char (+ %beginning 1))
@@ -68,7 +74,3 @@
     ) ;; end of let
   ) ;; end of func
 
-(defun kill-current-word ()
-  (interactive)
-  (backward-word 1)
-  (kill-word 1))
