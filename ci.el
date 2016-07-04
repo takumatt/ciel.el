@@ -1,4 +1,18 @@
 (defun ci (arg)
+  
+  ;; ‘S’
+  ;; An interned symbol whose name is read in the minibuffer. Terminate the input with either C-j or RET.
+  ;; Other characters that normally terminate a symbol (e.g., whitespace, parentheses and brackets) do not do so here. Prompt.
+  ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Interactive-Codes.html
+
+  ;; `x'
+  ;; 入力構文で表されたLispオブジェクト。 C-jかRETで終える。 オブジェクトは評価しない。
+  ;; see 節 19.3 ミニバッファでのLispオブジェクトの読み取り。 「プロンプト」。
+  ;; http://www.bookshelf.jp/texi/elisp-manual-20-2.5-jp/elisp_21.html
+
+  ;; interactive "s" is not no longer useful
+  ;; instead of this, would be happy to use "x".
+  
   (interactive "sci: ")
   (cond ((or (string= arg "(") ;; ")" "]" and  "}" are invalid in emacs lisp.
 	     (string= arg "{")
@@ -73,4 +87,14 @@
     
     ) ;; end of let
   ) ;; end of func
+
+(defun kill-current-word ()
+  (interactive)
+  (backward-word 1)
+  (kill-word 1))
+
+(defun message-thing-at-point (thing)
+  "thing-at-point で取得できた値を表示する"
+  (interactive "Sthing:")
+  (message "%s" (thing-at-point thing)))
 
