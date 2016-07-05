@@ -16,11 +16,11 @@
   (interactive "sci: ")
   (cond ((or (string= arg "(") ;; ")" "]" and  "}" are invalid in emacs lisp.
 	     (string= arg "{")
-	     ;; (string= arg "[")) ;; "[" is not ready, cuz idk how to use this in regexp
-	     )
+	     (string= arg "[")) ;; "[" is not ready, cuz idk how to use this in regexp
 	 (zap-from-to-char-paren arg))
 	((string= arg "\"") (zap-from-to-char arg))
 	((string= arg "w") (kill-current-word))
+	((string= arg "t") (zap-from-to-char "<"))
 	) ;; end of cond
   ) ;; end of func
 (global-set-key "\C-ci" 'ci)
@@ -35,6 +35,7 @@
       (setq %beginning (match-end 0))
 
       ;; (cond ((string= arg "(") (setq arg ")"))) ;; -> zap-from-to-char-paren
+      (cond ((string= arg "<") (setq arg ">")))
 
       (search-forward arg)
       (goto-char %point)
@@ -43,7 +44,6 @@
       
       (kill-region %beginning %end)
       (goto-char %beginning)
-      
       ) ;; end of catch 
     ) ;; end of let
   ) ;; end of func
@@ -52,7 +52,7 @@
   (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0) (%target nil))
     (cond ((string= arg "(") (setq %target "[()]"))
 	  ((string= arg "{") (setq %target "[{}]"))
-	  ;; ((string= arg "[") (setq %target "[\\[\\]]")))
+	  ((string= arg "[") (setq %target "[[]]"))
 	  )
     (catch 'end-of-search
       (while t
@@ -98,3 +98,4 @@
   (interactive "Sthing:")
   (message "%s" (thing-at-point thing)))
 
+(provide 'ci)
