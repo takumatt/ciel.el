@@ -1,8 +1,9 @@
 # Introduction
 
 An emacs command that is clone of "ci" in vim.  
-You can use ci", ci', ci(, ci{, ciw, cit.  
+You can use ci", ci', ci(, ci{, ciw, cit. 
 
+![circleanimationmuvie](https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif) 
 
 # Installation
 
@@ -36,9 +37,9 @@ Watch example or vim usage.
 	Ctrl-c, i, ( => kill inside of ()  
 	Ctrl-c, i, { => kill inside of {}
 
-you can also kill large area.  
-(I'll post gif.)  
-[](![circleanimationmuvie](path-to-gif))
+you can also kill nested parentheses as you can see.
+
+![circleanimationmuvie](https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif) 
 
 # Conclusion
 
