@@ -5,20 +5,17 @@
   ;; Other characters that normally terminate a symbol (e.g., whitespace, parentheses and brackets) do not do so here. Prompt.
   ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Interactive-Codes.html
 
-  ;; `x'
-  ;; 入力構文で表されたLispオブジェクト。 C-jかRETで終える。 オブジェクトは評価しない。
-  ;; see 節 19.3 ミニバッファでのLispオブジェクトの読み取り。 「プロンプト」。
-  ;; http://www.bookshelf.jp/texi/elisp-manual-20-2.5-jp/elisp_21.html
-
-  ;; interactive "s" is not no longer useful
-  ;; instead of this, would be happy to use "x".
+  ;; interactive "s" can't accept close parentheses like "}", ")"
+  ;; I'll find something instead of "s"
   
   (interactive "sci: ")
   (cond ((or (string= arg "(") ;; ")" "]" and  "}" are invalid in emacs lisp.
 	     (string= arg "{")
 	     (string= arg "[")) ;; "[" is not ready, cuz idk how to use this in regexp
 	 (zap-from-to-char-paren arg))
-	((string= arg "\"") (zap-from-to-char arg))
+	((or (string= arg "\"")
+	     (string= arg "\'"))
+	     (zap-from-to-char arg)) 
 	((string= arg "w") (kill-current-word))
 	((string= arg "t") (zap-from-to-char "<"))
 	) ;; end of cond
@@ -80,7 +77,7 @@
 	)
       ) ;; end of catch
 
-    ;; (message "%d" %paren-n)
+    ;; (message "%d" %paren-n) ;; debugging
     
     (kill-region (+ %beginning 1) (- %end 1))
     (goto-char (+ %beginning 1))
@@ -92,10 +89,5 @@
   (interactive)
   (backward-word 1)
   (kill-word 1))
-
-(defun message-thing-at-point (thing)
-  "thing-at-point で取得できた値を表示する"
-  (interactive "Sthing:")
-  (message "%s" (thing-at-point thing)))
 
 (provide 'ci)
