@@ -12,13 +12,15 @@ For example:
 
 
 	cd ~/.emacs.d/elisp/
-	git clone --recursive https://github.com/cs14095/ci.el/ci
+	git clone https://github.com/cs14095/ci.el
+	mv ci.el/ci/ci.el .
+	rm -rf ci.el
 
 
 Then add the following in your .emacs file:
 
 
-	(setq load-path (cons "~/.emacs.d/elisp/ci" load-path))
+	(setq load-path (cons "~/.emacs.d/elisp/" load-path))
 	(require 'ci)
 
 
