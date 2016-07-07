@@ -56,6 +56,8 @@
 	(cond ((<= %paren-n 0) ;; if
 	       (goto-char %beginning)
 	       (re-search-backward %target)
+	       (while (nth 3 (syntax-ppss))
+	       	 (re-search-backward %target))
 	       (setq %beginning (match-beginning 0))
 	       (cond ((string= arg (char-to-string (following-char))) (setq %paren-n (+ %paren-n 1)))
 		     (t (setq %paren-n (- %paren-n 1))))
@@ -63,6 +65,8 @@
 	      (t ;; else
 	       (goto-char %end)
 	       (re-search-forward %target)
+	       (while (nth 3 (syntax-ppss))
+	       	 (re-search-forward %target))
 	       (setq %end (match-end 0))
 	       (cond ((string= arg (char-to-string (preceding-char))) (setq %paren-n (+ %paren-n 1)))
 		     (t (setq %paren-n (- %paren-n 1))))
