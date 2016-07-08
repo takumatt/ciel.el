@@ -49,7 +49,7 @@
   (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0) (%target nil))
     (cond ((string= arg "(") (setq %target "[()]"))
 	  ((string= arg "{") (setq %target "[{}]"))
-	  ((string= arg "[") (setq %target "[[]]"))
+	  ((string= arg "[") (setq %target "[][]"))
 	  )
     (catch 'end-of-search
       (while t
