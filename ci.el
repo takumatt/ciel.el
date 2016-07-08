@@ -8,8 +8,8 @@
   ;; interactive "s" can't accept close parentheses like "}", ")"
   ;; I'll find something instead of "s"
   
-  (interactive "sci: ")
-  (cond ((or (string= arg "(") ;; ")" "]" and  "}" are invalid in emacs lisp.
+  (interactive "sci: ") ;; ")" "]" and  "}" are invalid in interactive "s".
+  (cond ((or (string= arg "(")
 	     (string= arg "{")
 	     (string= arg "["))
 	 (zap-from-to-char-paren arg))
@@ -17,7 +17,7 @@
 	     (string= arg "\'"))
 	     (zap-from-to-char arg)) 
 	((string= arg "w") (kill-current-word))
-	((string= arg "t") (zap-from-to-char "<"))
+	((string= arg "t") (zap-from-to-char "<")) ;; this is not completed. wait for update.
 	) ;; end of cond
   ) ;; end of func
 (global-set-key "\C-ci" 'ci)
@@ -45,9 +45,10 @@
     ) ;; end of let
   ) ;; end of func
 
+;; feature: catch search failed.
 (defun zap-from-to-char-paren (arg)
   (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0) (%target nil))
-    (cond ((string= arg "(") (setq %target "[()]"))
+    (cond ((string= arg "(") (setq %target "[()]")) ;; for regexp
 	  ((string= arg "{") (setq %target "[{}]"))
 	  ((string= arg "[") (setq %target "[][]"))
 	  )
@@ -89,6 +90,7 @@
     ) ;; end of let
   ) ;; end of func
 
+;; just kill a word.
 (defun kill-current-word ()
   (interactive)
   (backward-word 1)
