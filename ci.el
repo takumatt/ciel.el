@@ -11,7 +11,7 @@
   (interactive "sci: ")
   (cond ((or (string= arg "(") ;; ")" "]" and  "}" are invalid in emacs lisp.
 	     (string= arg "{")
-	     (string= arg "[")) ;; "[" is not ready, cuz idk how to use this in regexp
+	     (string= arg "["))
 	 (zap-from-to-char-paren arg))
 	((or (string= arg "\"")
 	     (string= arg "\'"))
