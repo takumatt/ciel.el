@@ -35,13 +35,15 @@
   (interactive "sci: ") ;; ")" "]" and  "}" are invalid in interactive "s".
   (cond ((or (string= arg "(")
 	     (string= arg "{")
-	     (string= arg "["))
+	     (string= arg "[")
+	     ;; (string= arg "<") ;; also "<" is invalid.
+	     )
 	 (zap-from-to-char-paren arg))
 	((or (string= arg "\"")
 	     (string= arg "\'"))
 	     (zap-from-to-char arg)) 
 	((string= arg "w") (kill-current-word))
-	((string= arg "t") (zap-from-to-char "<")) ;; this is not completed. wait for update.
+	((string= arg "t") (ci-tag)) ;; this is not completed. wait for update.
 	) ;; end of cond
   ) ;; end of func
 (global-set-key "\C-ci" 'ci)
@@ -70,12 +72,14 @@
   ) ;; end of func
 
 ;; feature: catch search failed.
-(defun zap-from-to-char-paren (arg)
-  (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0) (%target nil))
-    (cond ((string= arg "(") (setq %target "[()]")) ;; for regexp
-	  ((string= arg "{") (setq %target "[{}]"))
-	  ((string= arg "[") (setq %target "[][]"))
-	  )
+;; omg I found backward-list...this big function will be deleted.
+(defun zap-from-to-char-paren (arg &optional %target)
+  (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0))
+    (when (null %target)
+      (cond ((string= arg "(") (setq %target "[()]")) ;; for regexp
+	    ((string= arg "{") (setq %target "[{}]"))
+	    ((string= arg "[") (setq %target "[][]"))
+	    ))
     (catch 'end-of-search
       (while t
 	(cond ((<= %paren-n 0) ;; if
@@ -112,6 +116,30 @@
     (goto-char (+ %beginning 1))
     
     ) ;; end of let
+  ) ;; end of func
+
+;; A function for testing backward-list
+;; If this works well I will adopt
+(defun zap-from-to-char-paren-2 (arg)
+  )
+
+(defun ci-tag ()
+  (when (derived-mode-p 'web-mode)
+    (web-mode-navigate))
+  
+  ;; web-mode-navigate is web-mode's funcion
+  ;; following codes are without web-mode
+  
+  ;; (let ((%beginning) (%end) (%str) (%target))
+  ;;   (skip-chars-backward "^<")
+  ;;   (setq %beginning (point))
+  ;;   (skip-chars-forward "^>")
+  ;;   (setq %end (point))
+  ;;   (setq %str (concat "<" (buffer-substring %beginning %end) ">"))
+  ;;   (setq %target (concat %str "\|</" (substring %str 1)))
+  ;;   (message "%s, %s" %str %target)
+  
+  ;;   ) ;; end of let
   ) ;; end of func
 
 ;; just kill a word.
