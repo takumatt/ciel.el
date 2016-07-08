@@ -1,11 +1,12 @@
-# Introduction
+## Introduction
 
 An emacs command that is clone of "ci" in vim.  
 You can use ci", ci', ci(, ci{, ciw, cit. 
 
 ![circleanimationmuvie](https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif) 
 
-# Installation
+
+## Installation
 
 Download ci.el somewhere.  
 For example:
@@ -22,13 +23,13 @@ Then add the following in your .emacs file:
 	(require 'ci)
 
 
-# Usage
+## Usage
 
 Press `Ctrl-c, i` and enter available character.  
 Watch example or vim usage.  
 
 
-# Example
+## Example
 
 	Ctrl-c, i, w => kill a word  
 	Ctrl-c, i, t => kill inside of <>  
@@ -41,7 +42,12 @@ you can also kill nested parentheses as you can see.
 
 ![circleanimationmuvie](https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif) 
 
-# Conclusion
 
-Almost commands that I know are ready, but some commands are not beacuse of my coding issues and difficult of emacs lisp.  
+## Conclusion
+
+Almost commands that I know are ready.  
 I will continue to add commands and fix bugs, so please give me any comments.
+
+
+## License
+MIT
