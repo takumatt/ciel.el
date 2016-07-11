@@ -98,12 +98,8 @@
 		      (cond ((string= arg (char-to-string (following-char))) (setq %paren-n (+ %paren-n 1)))
 			    (t (setq %paren-n (- %paren-n 1)))))
 		     (t
-		      ;; (message "arg:%s, current-tag:%s" arg (current-tag))
-		      ;; (sleep-for 3)
 		      (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
-			    (t (setq %paren-n (1- %paren-n)))))
-		     )
-	       
+			    (t (setq %paren-n (1- %paren-n))))))
 	       ) ;; if
 	      (t ;; else
 	       (goto-char %end)
@@ -116,11 +112,9 @@
 		      (cond ((string= arg (char-to-string (preceding-char))) (setq %paren-n (+ %paren-n 1)))
 			    (t (setq %paren-n (- %paren-n 1)))))
 		     (t (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
-			      (t (setq %paren-n (1- %paren-n)))))
-		     )
-	       
+			      (t (setq %paren-n (1- %paren-n))))))
 	       ) ;; else
-	      )
+	      ) ;; cond
 
 	;; (message "%d" %paren-n) ;; debugging
 	;; (sleep-for 5) ;; debugging
@@ -189,6 +183,7 @@
     )
   )
 
+;; current-tag (get-"<>"-option) ;; t->"tag" nil->"<tag>"
 (defun current-tag (&optional %flag)
   (let ((%beginning) (%end) (%tag) (%point (point)))
     (when (not (string= (char-to-string (following-char)) "<")) (skip-chars-backward "^<"))
