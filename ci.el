@@ -134,23 +134,33 @@
   )
 
 (defun ci-tag ()
-  ;; (when (derived-mode-p 'web-mode)
-  ;;   (web-mode-navigate))
-  
   ;; web-mode-navigate is web-mode's funcion
-  ;; following codes are without web-mode
+  ;; t case in following cond is without web-mode
   
-  ;; (let ((%beginning) (%end) (%str) (%target))
-  ;;   (skip-chars-backward "^<")
-  ;;   (setq %beginning (point))
-  ;;   (skip-chars-forward "^>")
-  ;;   (setq %end (point))
-  ;;   (setq %str (concat "<" (buffer-substring %beginning %end) ">"))
-  ;;   (setq %target (concat %str "\|</" (substring %str 1)))
-  ;;   (message "%s, %s" %str %target)
+  (cond ((derived-mode-p 'web-mode) (web-mode-navigate))
+	(t (current-tag))
+	)
   
-  ;;   ) ;; end of let
   ) ;; end of func
+
+(defun ci-web-mode ()
+  )
+
+(defun ci-not-web-mode ()
+  )
+
+(defun current-tag ()
+  (let ((%beginning) (%end) (%tag) (%point (point)))
+    (skip-chars-backward "^<")
+    (setq %beginning (1- (point)))
+    (skip-chars-forward "^>")
+    (setq %end (1+ (point)))
+    (setq %tag (buffer-substring %beginning %end))
+    (message "%s" %tag) ;; debugging
+    (goto-char %point) ;; return to init pos
+    %tag
+    )
+  )
 
 ;; just kill a word.
 (defun kill-current-word ()
