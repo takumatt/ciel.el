@@ -38,7 +38,8 @@
 	     (string= arg "[")
 	     ;; (string= arg "<") ;; also "<" is invalid.
 	     )
-	 (zap-from-to-char-paren arg))
+	 ;; (zap-from-to-char-paren arg)
+	 (zap-from-to-char-paren-2 arg))
 	((or (string= arg "\"")
 	     (string= arg "\'"))
 	     (zap-from-to-char arg)) 
@@ -57,7 +58,7 @@
       (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
       (setq %beginning (match-end 0))
 
-      ;; (cond ((string= arg "(") (setq arg ")"))) ;; -> zap-from-to-char-paren
+      ;; (cond ((string= arg "(") (setq arg ")"))) ;; -> zap-from-to-char-paren, 2
       (cond ((string= arg "<") (setq arg ">")))
 
       (search-forward arg)
@@ -72,7 +73,9 @@
   ) ;; end of func
 
 ;; feature: catch search failed.
-;; omg I found backward-list...this big function will be deleted.
+;; yes, zap-from-to-char-paren-2 is much easier and faster (probably) than this.
+;; BUT if you don't install web-mode, then this func can be useful cuz u can't use web-mode's func.
+;; so this is not important func. you can delete this func.
 (defun zap-from-to-char-paren (arg &optional %target)
   (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0))
     (when (null %target)
@@ -118,14 +121,21 @@
     ) ;; end of let
   ) ;; end of func
 
-;; A function for testing backward-list
-;; If this works well I will adopt
+;; It works well. 
 (defun zap-from-to-char-paren-2 (arg)
+  (let ((%beginning) (%end))
+    (search-backward arg)
+    (setq %beginning (match-end 0))
+    (forward-list)
+    (setq %end (1- (point)))
+    (kill-region %beginning %end)
+    (goto-char (1- (point)))
+    )
   )
 
 (defun ci-tag ()
-  (when (derived-mode-p 'web-mode)
-    (web-mode-navigate))
+  ;; (when (derived-mode-p 'web-mode)
+  ;;   (web-mode-navigate))
   
   ;; web-mode-navigate is web-mode's funcion
   ;; following codes are without web-mode
