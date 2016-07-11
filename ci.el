@@ -76,6 +76,7 @@
 ;; BUT if you don't install web-mode, then this func can be useful cuz u can't use web-mode's func.
 ;; ALSO this func can kill inside of <>. forward-list can't kill this.
 
+;; zap-from-to-char-paren (search-string regexp html-flag)
 (defun zap-from-to-char-paren (arg &optional %target %flag) ;; default optional value is nil
   (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0))
     (when (null %target)
@@ -130,6 +131,16 @@
       ) ;; end of catch
 
     ;; (message "%d" %paren-n) ;; debugging
+
+    (when (not (null %flag))
+      (goto-char %beginning)
+      (skip-chars-forward "^>")
+      (setq %beginning (point))
+      (goto-char %end)
+      (skip-chars-backward "^<")
+      (setq %end (point))
+      (goto-char %end)
+      )
     
     (kill-region (+ %beginning 1) (- %end 1))
     (goto-char (+ %beginning 1))
@@ -153,12 +164,12 @@
   ;; web-mode-navigate is web-mode's funcion
   ;; t case in following cond is without web-mode
   
-  (cond ((derived-mode-p 'web-mode) (ci-web-mode))
-	(t (ci-not-web-mode))
+  (cond ((derived-mode-p 'web-mode) (cit-web-mode))
+	(t (cit-not-web-mode))
 	) ;; end of cond
   ) ;; end of func
 
-(defun ci-web-mode ()
+(defun cit-web-mode ()
   (let ((%beginning) (%end))
     (skip-chars-backward "^>")
     (setq %beginning (point))
@@ -169,7 +180,7 @@
     ) ;; end of let
   ) ;; end of func
 
-(defun ci-not-web-mode ()
+(defun cit-not-web-mode ()
   (let ((%target) (%point (point)))
     (skip-chars-backward "^<")
     (setq %target (concat "</?" (current-tag t) ">"))
