@@ -92,8 +92,16 @@
 	       (while (nth 3 (syntax-ppss))
 	       	 (re-search-backward %target))
 	       (setq %beginning (match-beginning 0))
-	       (cond ((string= arg (char-to-string (following-char))) (setq %paren-n (+ %paren-n 1)))
-		     (t (setq %paren-n (- %paren-n 1))))
+	       
+	       (cond ((null %flag)
+		      (cond ((string= arg (char-to-string (following-char))) (setq %paren-n (+ %paren-n 1)))
+			    (t (setq %paren-n (- %paren-n 1)))))
+		     (t
+		      (cond ((string= arg (current-tag)) (setq %paren-n (+1 %paren-n)))
+			    (t (setq %paren-n (-1 %paren-n)))))
+		     )
+
+	       
 	       ) ;; if
 	      (t ;; else
 	       (goto-char %end)
@@ -101,8 +109,14 @@
 	       (while (nth 3 (syntax-ppss))
 	       	 (re-search-forward %target))
 	       (setq %end (match-end 0))
-	       (cond ((string= arg (char-to-string (preceding-char))) (setq %paren-n (+ %paren-n 1)))
-		     (t (setq %paren-n (- %paren-n 1))))
+
+	       (cond ((null %flag)
+		      (cond ((string= arg (char-to-string (preceding-char))) (setq %paren-n (+ %paren-n 1)))
+			    (t (setq %paren-n (- %paren-n 1)))))
+		     (t (cond ((string= arg (current-tag)) (setq %paren-n (+1 %paren-n)))
+			      (t (setq %paren-n (-1 %paren-n)))))
+		     )
+	       
 	       ) ;; else
 	      )
 
@@ -155,16 +169,21 @@
   ) ;; end of func
 
 (defun ci-not-web-mode ()
-  (skip-chars-backward "^<")
-  (zap-from-to-char-paren (current-tag))
+  (let ((%target))
+    (skip-chars-backward "^<")
+    (setq %target (concat "</?" (current-tag t) ">"))
+    (zap-from-to-char-paren (current-tag) %target t)
+    )
   )
 
-(defun current-tag ()
+(defun current-tag (&optional %flag)
   (let ((%beginning) (%end) (%tag) (%point (point)))
     (skip-chars-backward "^<")
-    (setq %beginning (1- (point)))
+    (cond ((null %flag) (setq %beginning (1- (point))))
+	  (t (setq %beginning (point))))
     (skip-chars-forward "^>")
-    (setq %end (1+ (point)))
+    (cond ((null %flag) (setq %end (1+ (point))))
+	  (t (setq %end (point))))
     (setq %tag (buffer-substring %beginning %end))
     (message "%s" %tag) ;; debugging
     (goto-char %point) ;; return to init pos
