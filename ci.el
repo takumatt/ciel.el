@@ -88,7 +88,7 @@
       (while t
 	(cond ((<= %paren-n 0) ;; if
 	       (goto-char %beginning)
-	       (re-search-backward %target)
+	       (re-search-backward %target) ;; FIX: when pointer is on <, skip-chars skip < 
 	       (while (nth 3 (syntax-ppss))
 	       	 (re-search-backward %target))
 	       (setq %beginning (match-beginning 0))
@@ -97,10 +97,11 @@
 		      (cond ((string= arg (char-to-string (following-char))) (setq %paren-n (+ %paren-n 1)))
 			    (t (setq %paren-n (- %paren-n 1)))))
 		     (t
-		      (cond ((string= arg (current-tag)) (setq %paren-n (+1 %paren-n)))
-			    (t (setq %paren-n (-1 %paren-n)))))
+		      ;; (message "arg:%s, current-tag:%s" arg (current-tag))
+		      ;; (sleep-for 3)
+		      (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
+			    (t (setq %paren-n (1- %paren-n)))))
 		     )
-
 	       
 	       ) ;; if
 	      (t ;; else
@@ -113,8 +114,8 @@
 	       (cond ((null %flag)
 		      (cond ((string= arg (char-to-string (preceding-char))) (setq %paren-n (+ %paren-n 1)))
 			    (t (setq %paren-n (- %paren-n 1)))))
-		     (t (cond ((string= arg (current-tag)) (setq %paren-n (+1 %paren-n)))
-			      (t (setq %paren-n (-1 %paren-n)))))
+		     (t (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
+			      (t (setq %paren-n (1- %paren-n)))))
 		     )
 	       
 	       ) ;; else
@@ -132,7 +133,7 @@
     
     (kill-region (+ %beginning 1) (- %end 1))
     (goto-char (+ %beginning 1))
-    
+
     ) ;; end of let
   ) ;; end of func
 
@@ -169,23 +170,25 @@
   ) ;; end of func
 
 (defun ci-not-web-mode ()
-  (let ((%target))
+  (let ((%target) (%point (point)))
     (skip-chars-backward "^<")
     (setq %target (concat "</?" (current-tag t) ">"))
+    (goto-char %point)
     (zap-from-to-char-paren (current-tag) %target t)
     )
   )
 
 (defun current-tag (&optional %flag)
   (let ((%beginning) (%end) (%tag) (%point (point)))
-    (skip-chars-backward "^<")
-    (cond ((null %flag) (setq %beginning (1- (point))))
+    (when (not (string= (char-to-string (following-char)) "<")) (skip-chars-backward "^<"))
+    (cond ((and (null %flag) (not (string= (char-to-string (following-char)) "<"))) (setq %beginning (1- (point))))
 	  (t (setq %beginning (point))))
     (skip-chars-forward "^>")
     (cond ((null %flag) (setq %end (1+ (point))))
 	  (t (setq %end (point))))
     (setq %tag (buffer-substring %beginning %end))
-    (message "%s" %tag) ;; debugging
+    ;; (message "current-tag: %s" %tag) ;; debugging
+    ;; (sleep-for 3)
     (goto-char %point) ;; return to init pos
     %tag
     )
