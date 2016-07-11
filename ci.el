@@ -22,6 +22,7 @@
 ;; THE SOFTWARE.
 ;;
 
+;; Change Inside
 (defun ci (arg)
   
   ;; ‘S’
@@ -48,7 +49,13 @@
   ) ;; end of func
 (global-set-key "\C-ci" 'ci)
 
-;; clone of ci in vim. some behavior is completely different from original vim.
+;; COpy inside
+(defun co (arg)
+  (interactive "scopy-inner: ")
+  )
+(global-set-key "\C-cy" 'co)
+
+;; Clone Of Ci In Vim. Some Behavior Is completely different from original vim.
 (defun zap-from-to-char (arg)
   (let ((%point (point)) (%beginning nil) (%end nil))
     (catch 'no-match-in-line-error
