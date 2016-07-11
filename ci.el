@@ -35,13 +35,12 @@
   (interactive "sci: ") ;; ")" "]" and  "}" are invalid in interactive "s".
   (cond ((or (string= arg "(")
 	     (string= arg "{")
-	     (string= arg "[")
-	     ;; (string= arg "<") ;; also "<" is invalid.
-	     )
-	 ;; (zap-from-to-char-paren arg)
+	     (string= arg "["))
 	 (zap-from-to-char-paren-2 arg))
+	((string= arg "<") (zap-from-to-char-paren arg))
 	((or (string= arg "\"")
-	     (string= arg "\'"))
+	     (string= arg "\'")
+	     (string= arg "\`"))
 	     (zap-from-to-char arg)) 
 	((string= arg "w") (kill-current-word))
 	((string= arg "t") (ci-tag)) ;; this is not completed. wait for update.
@@ -75,13 +74,15 @@
 ;; feature: catch search failed.
 ;; yes, zap-from-to-char-paren-2 is much easier and faster (probably) than this.
 ;; BUT if you don't install web-mode, then this func can be useful cuz u can't use web-mode's func.
-;; so this is not important func. you can delete this func.
-(defun zap-from-to-char-paren (arg &optional %target)
+;; ALSO this func can kill inside of <>. forward-list can't kill this.
+
+(defun zap-from-to-char-paren (arg &optional %target %flag) ;; default optional value is nil
   (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0))
     (when (null %target)
       (cond ((string= arg "(") (setq %target "[()]")) ;; for regexp
 	    ((string= arg "{") (setq %target "[{}]"))
 	    ((string= arg "[") (setq %target "[][]"))
+	    ((string= arg "<") (setq %target "[<>]")) 
 	    ))
     (catch 'end-of-search
       (while t
@@ -137,16 +138,25 @@
   ;; web-mode-navigate is web-mode's funcion
   ;; t case in following cond is without web-mode
   
-  (cond ((derived-mode-p 'web-mode) (web-mode-navigate))
-	(t (current-tag))
-	)
-  
+  (cond ((derived-mode-p 'web-mode) (ci-web-mode))
+	(t (ci-not-web-mode))
+	) ;; end of cond
   ) ;; end of func
 
 (defun ci-web-mode ()
-  )
+  (let ((%beginning) (%end))
+    (skip-chars-backward "^>")
+    (setq %beginning (point))
+    (skip-chars-backward "^<") ;; for searching
+    (web-mode-navigate)
+    (setq %end (point))
+    (kill-region %beginning %end)
+    ) ;; end of let
+  ) ;; end of func
 
 (defun ci-not-web-mode ()
+  (skip-chars-backward "^<")
+  (zap-from-to-char-paren (current-tag))
   )
 
 (defun current-tag ()
