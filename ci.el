@@ -22,7 +22,6 @@
 ;; THE SOFTWARE.
 ;;
 
-;; Change Inside
 (defun ci (arg)
   
   ;; ‘S’
@@ -49,13 +48,13 @@
   ) ;; end of func
 (global-set-key "\C-ci" 'ci)
 
-;; COpy inside
 (defun co (arg)
-  (interactive "scopy-inner: ")
+  (interactive "sco: ")
+  
   )
-(global-set-key "\C-cy" 'co)
+(global-set-key "\C-co" 'co)
 
-;; Clone Of Ci In Vim. Some Behavior Is completely different from original vim.
+;; clone of ci in vim. some behavior is completely different from original vim.
 (defun zap-from-to-char (arg)
   (let ((%point (point)) (%beginning nil) (%end nil))
     (catch 'no-match-in-line-error
@@ -99,29 +98,42 @@
 	       (re-search-backward %target) ;; FIX: when pointer is on <, skip-chars skip < 
 	       (while (nth 3 (syntax-ppss))
 	       	 (re-search-backward %target))
-	       (setq %beginning (match-beginning 0))
+	       ;; (setq %beginning (match-beginning 0))
 	       
 	       (cond ((null %flag)
+		      (setq %beginning (match-beginning 0))
 		      (cond ((string= arg (char-to-string (following-char))) (setq %paren-n (+ %paren-n 1)))
 			    (t (setq %paren-n (- %paren-n 1)))))
 		     (t
-		      (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
-			    (t (setq %paren-n (1- %paren-n))))))
+		      (setq %beginning (1+ (match-beginning 0)))
+		      ;; (message "arg:%s, current-tag:%s" arg (current-tag))
+		      ;; (sleep-for 3)
+ 		      (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
+			    (t (setq %paren-n (1- %paren-n)))))
+		     )
+	       
 	       ) ;; if
 	      (t ;; else
 	       (goto-char %end)
 	       (re-search-forward %target)
 	       (while (nth 3 (syntax-ppss))
 	       	 (re-search-forward %target))
-	       (setq %end (match-end 0))
+	       ;; (setq %end (match-end 0))
 
 	       (cond ((null %flag)
+		      (setq %end (match-end 0))
 		      (cond ((string= arg (char-to-string (preceding-char))) (setq %paren-n (+ %paren-n 1)))
 			    (t (setq %paren-n (- %paren-n 1)))))
-		     (t (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
-			      (t (setq %paren-n (1- %paren-n))))))
+		     (t
+		      ;; (message "arg:%s, current-tag:%s" arg (current-tag))
+		      ;; (sleep-for 3)
+		      (setq %end (1- (match-end 0)))
+		      (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
+			    (t (setq %paren-n (1- %paren-n)))))
+		     )
+	       
 	       ) ;; else
-	      ) ;; cond
+	      )
 
 	;; (message "%d" %paren-n) ;; debugging
 	;; (sleep-for 5) ;; debugging
@@ -184,24 +196,27 @@
 (defun cit-not-web-mode ()
   (let ((%target) (%point (point)))
     (skip-chars-backward "^<")
-    (setq %target (concat "</?" (current-tag t) ">"))
+    (setq %target (concat "</?" (current-tag t)))
     (goto-char %point)
+    ;; (message "%s, %s" (current-tag) %target)
+    ;; (sleep-for 3)
     (zap-from-to-char-paren (current-tag) %target t)
     )
   )
 
-;; current-tag (get-"<>"-option) ;; t->"tag" nil->"<tag>"
+;; FIX: current tag is not always completely same. (ex. <div class=hoge> </div>)
 (defun current-tag (&optional %flag)
   (let ((%beginning) (%end) (%tag) (%point (point)))
     (when (not (string= (char-to-string (following-char)) "<")) (skip-chars-backward "^<"))
     (cond ((and (null %flag) (not (string= (char-to-string (following-char)) "<"))) (setq %beginning (1- (point))))
 	  (t (setq %beginning (point))))
-    (skip-chars-forward "^>")
-    (cond ((null %flag) (setq %end (1+ (point))))
+    ;; (skip-chars-forward "^>")
+    (skip-chars-forward "^[[:space:]>]")
+    (cond ((null %flag) (setq %end (point)))
 	  (t (setq %end (point))))
     (setq %tag (buffer-substring %beginning %end))
     ;; (message "current-tag: %s" %tag) ;; debugging
-    ;; (sleep-for 3)
+    ;; (sleep-for 3) ;; debugging
     (goto-char %point) ;; return to init pos
     %tag
     )
