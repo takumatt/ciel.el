@@ -33,26 +33,44 @@
   ;; I'll find something instead of "s"
   
   (interactive "sci: ") ;; ")" "]" and  "}" are invalid in interactive "s".
-  (cond ((or (string= arg "(")
-	     (string= arg "{")
-	     (string= arg "["))
-	 (zap-from-to-char-paren-2 arg))
-	((string= arg "<") (zap-from-to-char-paren arg))
-	((or (string= arg "\"")
-	     (string= arg "\'")
-	     (string= arg "\`"))
-	     (zap-from-to-char arg)) 
-	((string= arg "w") (kill-current-word))
-	((string= arg "t") (ci-tag)) ;; this is not completed. wait for update.
-	) ;; end of cond
+  (let ((%region))
+    (cond ((or (or (string= arg "(") (string= arg ")"))
+	       (or (string= arg "[") (string= arg "]"))
+	       (or (string= arg "{") (string= arg "}")))
+	   (setq %region (zap-from-to-char-paren-2 arg)))
+	  ((or (string= arg "<") (string= arg ">")) (setq %region (zap-from-to-char-paren arg)))
+	  ((or (string= arg "\"")
+	       (string= arg "\'")
+	       (string= arg "\`"))
+	   (setq %region (zap-from-to-char arg)))
+	  ((string= arg "w") (setq %region (kill-current-word)))
+	  ((string= arg "t") (setq %region (ci-tag))) ;; this is not completed. wait for update.
+	  ) ;; end of cond
+    (kill-region (car %region) (cadr %region))
+    )
   ) ;; end of func
 (global-set-key "\C-ci" 'ci)
 
 (defun co (arg)
   (interactive "sco: ")
-  
+  (let ((%region))
+    (cond ((or (or (string= arg "(") (string= arg ")"))
+	       (or (string= arg "[") (string= arg "]"))
+	       (or (string= arg "{") (string= arg "}")))
+	   (setq %region (zap-from-to-char-paren-2 arg)))
+	  ((or (string= arg "<") (string= arg ">")) (setq %region (zap-from-to-char-paren arg)))
+	  ((or (string= arg "\"")
+	       (string= arg "\'")
+	       (string= arg "\`"))
+	   (setq %region (zap-from-to-char arg)))
+	  ((string= arg "w") (setq %region (kill-current-word)))
+	  ((string= arg "t") (setq %region (ci-tag))) ;; this is not completed. wait for update.
+	  ) ;; end of cond
+    (copy-region-as-kill (car %region) (cadr %region))
+    )
   )
 (global-set-key "\C-co" 'co)
+
 
 ;; clone of ci in vim. some behavior is completely different from original vim.
 (defun zap-from-to-char (arg)
@@ -71,8 +89,9 @@
       (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
       (setq %end (match-beginning 0))
       
-      (kill-region %beginning %end)
+      ;; (kill-region %beginning %end)
       (goto-char %beginning)
+      (list %beginning %end)
       ) ;; end of catch 
     ) ;; end of let
   ) ;; end of func
@@ -95,20 +114,19 @@
       (while t
 	(cond ((<= %paren-n 0) ;; if
 	       (goto-char %beginning)
-	       (re-search-backward %target) ;; FIX: when pointer is on <, skip-chars skip < 
+	       (re-search-backward %target)
 	       (while (nth 3 (syntax-ppss))
-	       	 (re-search-backward %target))
-	       ;; (setq %beginning (match-beginning 0))
+		 (re-search-backward %target))
 	       
-	       (cond ((null %flag)
+	       (cond ((null %flag) ;; not html-mode
 		      (setq %beginning (match-beginning 0))
 		      (cond ((string= arg (char-to-string (following-char))) (setq %paren-n (+ %paren-n 1)))
 			    (t (setq %paren-n (- %paren-n 1)))))
-		     (t
+		     (t ;; html-mode
 		      (setq %beginning (1+ (match-beginning 0)))
-		      ;; (message "arg:%s, current-tag:%s" arg (current-tag))
+		      ;; (message "arg: %s, ct: %s" arg (current-tag))
 		      ;; (sleep-for 3)
- 		      (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
+		      (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
 			    (t (setq %paren-n (1- %paren-n)))))
 		     )
 	       
@@ -117,17 +135,17 @@
 	       (goto-char %end)
 	       (re-search-forward %target)
 	       (while (nth 3 (syntax-ppss))
-	       	 (re-search-forward %target))
-	       ;; (setq %end (match-end 0))
+		 (re-search-forward %target))
 
-	       (cond ((null %flag)
+	       (cond ((null %flag) ;; not html-mode
 		      (setq %end (match-end 0))
 		      (cond ((string= arg (char-to-string (preceding-char))) (setq %paren-n (+ %paren-n 1)))
 			    (t (setq %paren-n (- %paren-n 1)))))
-		     (t
-		      ;; (message "arg:%s, current-tag:%s" arg (current-tag))
-		      ;; (sleep-for 3)
+		     (t ;; html-mode
 		      (setq %end (1- (match-end 0)))
+		      ;; (setq %end (1- (match-beginning 0)))
+		      ;; (message "arg: %s, ct: %s" arg (current-tag))
+		      ;; (sleep-for 3)
 		      (cond ((string= arg (current-tag)) (setq %paren-n (1+ %paren-n)))
 			    (t (setq %paren-n (1- %paren-n)))))
 		     )
@@ -155,8 +173,10 @@
       (goto-char %end)
       )
     
-    (kill-region (+ %beginning 1) (- %end 1))
+    ;; (kill-region (+ %beginning 1) (- %end 1))
     (goto-char (+ %beginning 1))
+    
+    (list (1+ %beginning) (1- %end))
 
     ) ;; end of let
   ) ;; end of func
@@ -168,8 +188,9 @@
     (setq %beginning (match-end 0))
     (forward-list)
     (setq %end (1- (point)))
-    (kill-region %beginning %end)
+    ;; (kill-region %beginning %end)
     (goto-char (1- (point)))
+    (list %beginning %end)
     )
   )
 
@@ -189,7 +210,8 @@
     (skip-chars-backward "^<") ;; for searching
     (web-mode-navigate)
     (setq %end (point))
-    (kill-region %beginning %end)
+    ;; (kill-region %beginning %end)
+    (list %beginning %end)
     ) ;; end of let
   ) ;; end of func
 
@@ -210,7 +232,6 @@
     (when (not (string= (char-to-string (following-char)) "<")) (skip-chars-backward "^<"))
     (cond ((and (null %flag) (not (string= (char-to-string (following-char)) "<"))) (setq %beginning (1- (point))))
 	  (t (setq %beginning (point))))
-    ;; (skip-chars-forward "^>")
     (skip-chars-forward "^[[:space:]>]")
     (cond ((null %flag) (setq %end (point)))
 	  (t (setq %end (point))))
