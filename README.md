@@ -7,7 +7,7 @@ This is standalone package and you can probably use any mode.
 
 ![circleanimationmuvie](https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif) 
 
-*** Now at work! I highly recommend updating every week!***
+** Now at work! I highly recommend updating every week!**
 
 
 ## Installation
