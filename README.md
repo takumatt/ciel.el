@@ -2,7 +2,7 @@
 
 An emacs command that is clone of "ci" in vim.  
 You can use ci", ci', ci(, ci{, ciw and cit entering `Ctrl-c, i`.   
-Also you can copy them with `Ctrl-c, o` instead of `Ctrl-c, o`.
+Also you can copy them with `Ctrl-c, o` instead of `Ctrl-c, i`.  
 This is standalone package and you can probably use any mode.  
 
 ![circleanimationmuvie](https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif) 
