@@ -23,17 +23,9 @@
 ;;
 
 (defun ci (arg)
-  
-  ;; ‘S’
-  ;; An interned symbol whose name is read in the minibuffer. Terminate the input with either C-j or RET.
-  ;; Other characters that normally terminate a symbol (e.g., whitespace, parentheses and brackets) do not do so here. Prompt.
-  ;; https://www.gnu.org/software/emacs/manual/html_node/elisp/Interactive-Codes.html
-
-  ;; interactive "s" can't accept close parentheses like "}", ")"
-  ;; I'll find something instead of "s"
-  
-  (interactive "sci: ") ;; ")" "]" and  "}" are invalid in interactive "s".
+  (interactive "sci: ")
   (let ((%region))
+    ;; I'll merge zap-from-tochar-paren into one func.
     (cond ((or (or (string= arg "(") (string= arg ")"))
 	       (or (string= arg "[") (string= arg "]"))
 	       (or (string= arg "{") (string= arg "}")))
@@ -44,13 +36,14 @@
 	       (string= arg "\`"))
 	   (setq %region (zap-from-to-char arg)))
 	  ((string= arg "w") (setq %region (kill-current-word)))
-	  ((string= arg "t") (setq %region (ci-tag))) ;; this is not completed. wait for update.
+	  ((string= arg "t") (setq %region (ci-tag)))
 	  ) ;; end of cond
     (kill-region (car %region) (cadr %region))
     )
   ) ;; end of func
 (global-set-key "\C-ci" 'ci)
 
+;; COpy inside
 (defun co (arg)
   (interactive "sco: ")
   (let ((%region))
@@ -96,12 +89,12 @@
     ) ;; end of let
   ) ;; end of func
 
-;; feature: catch search failed.
-;; yes, zap-from-to-char-paren-2 is much easier and faster (probably) than this.
-;; BUT if you don't install web-mode, then this func can be useful cuz u can't use web-mode's func.
-;; ALSO this func can kill inside of <>. forward-list can't kill this.
-
 ;; zap-from-to-char-paren (search-string regexp html-flag)
+;; I confirm that sometimes this function doesn't work in html-mode.
+;; However I think that is not depend on this.
+;; I tried this on same text but sometimes get wrong.
+;; Probably it's regexp or buffering bug. (or is it bohrbug?)
+
 (defun zap-from-to-char-paren (arg &optional %target %flag) ;; default optional value is nil
   (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0))
     (when (null %target)
