@@ -57,7 +57,7 @@
 	       (string= arg "\`"))
 	   (setq %region (zap-from-to-char arg)))
 	  ((string= arg "w") (setq %region (kill-current-word)))
-	  ((string= arg "t") (setq %region (ci-tag))) ;; this is not completed. wait for update.
+	  ((string= arg "t") (setq %region (ci-tag)))
 	  ) ;; end of cond
     (copy-region-as-kill (car %region) (cadr %region))
     )
@@ -108,7 +108,7 @@
 	(cond ((<= %paren-n 0) ;; if
 	       (goto-char %beginning)
 	       (re-search-backward %target)
-	       (while (nth 3 (syntax-ppss))
+	       (while (nth 3 (syntax-ppss)) ;; if arg is quoted then ignore
 		 (re-search-backward %target))
 	       
 	       (cond ((null %flag) ;; not html-mode
