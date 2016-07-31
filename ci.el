@@ -35,10 +35,11 @@
 	       (string= arg "\'")
 	       (string= arg "\`"))
 	   (setq %region (zap-from-to-char arg)))
-	  ((string= arg "w") (setq %region (kill-current-word)))
+	  ((string= arg "w") (kill-current-word))
 	  ((string= arg "t") (setq %region (ci-tag)))
 	  ) ;; end of cond
-    (kill-region (car %region) (cadr %region))
+    (unless (null %region)
+      (kill-region (car %region) (cadr %region)))
     )
   ) ;; end of func
 (global-set-key "\C-ci" 'ci)
@@ -56,10 +57,11 @@
 	       (string= arg "\'")
 	       (string= arg "\`"))
 	   (setq %region (zap-from-to-char arg)))
-	  ((string= arg "w") (setq %region (kill-current-word)))
-	  ((string= arg "t") (setq %region (ci-tag))) ;; this is not completed. wait for update.
+	  ((string= arg "w") (kill-current-word)) ;; FIX: not kill! but copy
+	  ((string= arg "t") (setq %region (ci-tag)))
 	  ) ;; end of cond
-    (copy-region-as-kill (car %region) (cadr %region))
+    (unless (null %region)
+      (copy-region-as-kill (car %region) (cadr %region)))
     )
   )
 (global-set-key "\C-co" 'co)
@@ -95,6 +97,7 @@
 ;; I tried this on same text but sometimes get wrong.
 ;; Probably it's regexp or buffering bug. (or is it bohrbug?)
 
+;; I'll devide this html-mode and not.
 (defun zap-from-to-char-paren (arg &optional %target %flag) ;; default optional value is nil
   (let ((%point (point)) (%beginning (point)) (%end (point)) (%paren-n 0))
     (when (null %target)
@@ -184,28 +187,73 @@
     (re-search-backward %target)
     (while (nth 3 (syntax-ppss))
       (re-search-backward %target))
-    (goto-char %point)
-    (unless (string= arg (char-to-string (following-char)))
-      (re-search-forward %target)
-      (while (nth 3 (syntax-ppss))
-      	(re-search-forward %target))
-      (cond ((string= arg (char-to-string (preceding-char))) (goto-char %point) nil)
-      	    (t t))
-      )
-    )
-  )
+    (cond ((not (string= arg (char-to-string (following-char))))
+	   (goto-char %point)
+	   (re-search-forward %target)
+	   (while (nth 3 (syntax-ppss))
+	     (re-search-forward %target))
+	   (cond ((not (string= arg (char-to-string (preceding-char))))
+		  (goto-char %point) (message "t") t)
+		 (t (goto-char %point)
+		    (message "nil")
+		    nil
+		    )))
+	  (t (goto-char %point)
+	     (message "nil")
+	     nil
+	     ))
+    ))
+  
 
+(defun check-closing-tag ()
+  (interactive)
+  ;; web-mode
+  ;; (let ((%point (point)))
+  ;;   (web-mode-tag-previous)
+  ;;   )
+
+  ;; not web-mode
+  ;; (let ((%point (point)))
+  ;;   (message "%d" %point)
+  ;;   (sleep-for 3)
+  ;;   (skip-chars-backward "^<")
+  ;;   (while (nth 3 (syntax-ppss))
+  ;;     (skip-chars-backward "^<"))
+  ;;   (when (string= "/" (char-to-string (following-char)))
+  ;;     (goto-char %point)
+  ;;     (skip-chars-forward "^<")
+  ;;     (while (nth 3 (syntax-ppss))
+  ;; 	(skip-chars-forward "^<"))
+  ;;     (message "%d" (following-char))
+  ;;     (sleep-for 3)
+  ;;     (when (string= "/" (char-to-string (char-after 2)))
+  ;; 	(message "closing")
+  ;; 	(goto-char %point)
+  ;; 	  t
+  ;; 	  )
+  ;;     ) ;; when
+  ;;   (message "opening")
+  ;;   (goto-char %point)
+  ;;   nil
+  ;;   ) ;; let
+  )
 ;; It works well. 
 (defun zap-from-to-char-paren-2 (arg)
-  (let ((%beginning) (%end))
-    ;; (when (check-closing-paren arg) (setq %end (match-end 0)))
-    (search-backward arg)
-    (setq %beginning (match-end 0))
-    (forward-list)
-    (setq %end (1- (point)))
-    ;; (kill-region %beginning %end)
-    (goto-char (1- (point)))
-    (list %beginning %end)
+  (let ((%beginning) (%end) (%target))
+    (cond ((check-closing-paren arg)
+	   (setq %end (match-beginning 0))
+	   (backward-list)
+	   (setq %beginning (1+ (point)))
+	   (goto-char (1+ (point)))
+	   (list %beginning %end))
+	  (t (search-backward arg)
+	     (setq %beginning (match-end 0))
+	     (forward-list)
+	     (setq %end (1- (point)))
+	     ;; (kill-region %beginning %end)
+	     (goto-char (1- (point)))
+	     (list %beginning %end))
+	  )
     )
   )
 
@@ -243,6 +291,7 @@
 
 ;; FIX: current tag is not always completely same. (ex. <div class=hoge> </div>)
 (defun current-tag (&optional %flag)
+  (interactive)
   (let ((%beginning) (%end) (%tag) (%point (point)))
     (when (not (string= (char-to-string (following-char)) "<")) (skip-chars-backward "^<"))
     (cond ((and (null %flag) (not (string= (char-to-string (following-char)) "<"))) (setq %beginning (1- (point))))
@@ -254,13 +303,31 @@
     ;; (message "current-tag: %s" %tag) ;; debugging
     ;; (sleep-for 3) ;; debugging
     (goto-char %point) ;; return to init pos
+    (message "%s" %tag)
     %tag
     )
   )
 
+(defun tag-at-point ()
+  (interactive)
+  (let ((%closef) (%beginning) (%end) (%tag) (%point (point)))
+    (cond ((string=  "<" (char-to-string (following-char))) (goto-char (1+ (point))) (setq %beginning (point)))
+	  (t (skip-chars-backward "^<") (while (nth 3 (syntax-ppss)) (skip-chars-backward "^<")) (setq %beginning (point))))
+    (when (string= "/" (char-to-string (following-char))) (goto-char (1+ %beginning)) (setq %beginning (point)) (setq %closef t))
+    (skip-chars-forward "^[[:space:]>]")
+    (setq %end (point))
+    (setq %tag (buffer-substring %beginning %end))
+    (goto-char %point)
+    (message "%s" %tag)
+    (list %tag %closef) ;; return
+    )
+  )
+(defun move-to-next-tag ()
+  ;; regxp backward  [<>] => when > 
+ )
+
 ;; just kill a word.
 (defun kill-current-word ()
-  (interactive)
   (backward-word 1)
   (kill-word 1))
 
