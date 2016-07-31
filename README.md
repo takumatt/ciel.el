@@ -1,13 +1,18 @@
 ## Introduction
 
 An emacs command that is clone of "ci" in vim.  
-You can use ci", ci', ci(, ci{, ciw and cit entering `Ctrl-c, i`.   
+You can use ci", ci', ci(, ci{ and ciw entering `Ctrl-c, i`.   
 Also you can copy them with `Ctrl-c, o` instead of `Ctrl-c, i`.  
 This is standalone package and you can probably use any mode.  
 
 ![circleanimationmuvie](https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif) 
 
-**Now at work! I highly recommend updating every week!**
+**Now at work! I highly recommend updating every week!**  
+I decided to remove cit on master branch, because it's too heavy.  
+Other command is still available, but some code is broken.  
+I will fix in summer vacation...  
+
+
 
 
 ## Installation
