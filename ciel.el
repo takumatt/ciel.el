@@ -25,21 +25,20 @@
 (defun ci (arg)
   (interactive "sci: ")
   (let ((%region))
-    ;; I'll merge zap-from-tochar-paren into one func.
     (cond ((or (or (string= arg "(") (string= arg ")"))
 	       (or (string= arg "[") (string= arg "]"))
-	       (or (string= arg "{") (string= arg "}")))
+	       (or (string= arg "{") (string= arg "}"))) ;; ), ] and } doesn't work
 	   (setq %region (zap-from-to-char-paren arg)))
 	  ((or (string= arg "\"")
 	       (string= arg "\'")
 	       (string= arg "\`"))
 	   (setq %region (zap-from-to-char arg)))
 	  ((string= arg "w") (setq %region (kill-current-word)))
-	  ) ;; end of cond
+	  )
     (unless (null %region)
       (kill-region (car %region) (cadr %region)))
     )
-  ) ;; end of func
+  )
 (global-set-key "\C-ci" 'ci)
 
 ;; COpy inside
@@ -54,8 +53,8 @@
 	       (string= arg "\'")
 	       (string= arg "\`"))
 	   (setq %region (zap-from-to-char arg)))
-	  ((string= arg "w") (setq %region (kill-current-word))) ;; FIX: not kill! but copy
-	  ) ;; end of cond
+	  ((string= arg "w") (setq %region (kill-current-word)))
+	  )
     (unless (null %region)
       (copy-region-as-kill (car %region) (cadr %region)))
     )
@@ -82,6 +81,17 @@
     )
   )
 
+;; check that both previous and next parenthesis are closing to define region.
+;; ( %point ( => opening
+;; ) %point ( => opening
+;; ) %point ) => closing
+
+;; this function makes zap-from-to-char-paren be able to kill nested parentheses from the back.
+;; func {      =>   func {}
+;;   if {
+;;   } %point  
+;; }
+
 (defun check-closing-paren (arg)
   (let ((%target) (%regexp) (%point (point)))
     (cond ((or (string= arg "(") (string= arg ")")) (setq %target "(")) 
@@ -92,7 +102,7 @@
 	  ((string= arg "[") (setq %regexp "[][]"))
 	  )
     (re-search-backward %regexp)
-    (while (nth 3 (syntax-ppss))
+    (while (nth 3 (syntax-ppss)) ;; ignore commented
       (re-search-backward %regexp))
     (cond ((not (string= %target (char-to-string (following-char))))
 	   (goto-char %point)
@@ -100,15 +110,12 @@
 	   (while (nth 3 (syntax-ppss))
 	     (re-search-forward %regexp))
 	   (cond ((not (string= %target (char-to-string (preceding-char))))
-		  (message "t") t)
 		 (t (goto-char %point)
-		    (message "nil")
 		    nil
 		    )))
 	  (t (goto-char %point)
-	     (message "nil")
 	     nil
-	     ))
+	     )))
     ))
 
 (defun zap-from-to-char (arg)
@@ -126,9 +133,9 @@
       
       (goto-char %beginning)
       (list %beginning %end)
-      ) ;; end of catch 
-    ) ;; end of let
-  ) ;; end of func
+      )
+    )
+  )
 
 (defun kill-current-word ()
   (let ((%beginning) (%end) (%point (point)))
