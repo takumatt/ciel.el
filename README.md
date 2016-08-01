@@ -22,14 +22,14 @@ For example:
 
 
 	cd ~/.emacs.d/elisp/
-	git clone https://github.com/cs14095/ci.el
+	git clone https://github.com/cs14095/ciel.el
 
 
 Then add the following in your .emacs file:
 
 
-	(setq load-path (cons "~/.emacs.d/elisp/ci.el" load-path))
-	(require 'ci)
+	(setq load-path (cons "~/.emacs.d/elisp/ciel.el" load-path))
+	(require 'ciel)
 
 
 ## Usage
