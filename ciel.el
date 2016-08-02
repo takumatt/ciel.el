@@ -27,13 +27,13 @@
   (let ((%region))
     (cond ((or (or (string= arg "(") (string= arg ")"))
 	       (or (string= arg "[") (string= arg "]"))
-	       (or (string= arg "{") (string= arg "}"))) ;; ), ] and } doesn't work
-	   (setq %region (zap-from-to-char-paren arg)))
+	       (or (string= arg "{") (string= arg "}"))) ;; ), ] and } doesn't work. I have no idea.
+	   (setq %region (region-paren arg)))
 	  ((or (string= arg "\"")
 	       (string= arg "\'")
 	       (string= arg "\`"))
-	   (setq %region (zap-from-to-char arg)))
-	  ((string= arg "w") (setq %region (kill-current-word)))
+	   (setq %region (region-quote arg)))
+	  ((string= arg "w") (setq %region (region-word)))
 	  )
     (unless (null %region)
       (kill-region (car %region) (cadr %region)))
@@ -48,12 +48,12 @@
     (cond ((or (or (string= arg "(") (string= arg ")"))
 	       (or (string= arg "[") (string= arg "]"))
 	       (or (string= arg "{") (string= arg "}")))
-	   (setq %region (zap-from-to-char-paren arg)))
+	   (setq %region (region-paren arg)))
 	  ((or (string= arg "\"")
 	       (string= arg "\'")
 	       (string= arg "\`"))
-	   (setq %region (zap-from-to-char arg)))
-	  ((string= arg "w") (setq %region (kill-current-word)))
+	   (setq %region (region-quote arg)))
+	  ((string= arg "w") (setq %region (region-word)))
 	  )
     (unless (null %region)
       (copy-region-as-kill (car %region) (cadr %region)))
@@ -61,73 +61,65 @@
   )
 (global-set-key "\C-co" 'co)
 
-
-(defun zap-from-to-char-paren (arg)
+(defun region-paren (arg)
+  (interactive "s") 
   (let ((%beginning) (%end) (%target))
-    (cond ((check-closing-paren arg)
-	   (setq %end (match-beginning 0))
-	   (backward-list)
-	   (setq %beginning (1+ (point)))
-	   (goto-char (1+ (point)))
-	   (list %beginning %end))
-	  (t (search-backward arg)
-	     (setq %beginning (match-end 0))
-	     (forward-list)
-	     (setq %end (1- (point)))
-	     ;; (kill-region %beginning %end)
-	     (goto-char (1- (point)))
-	     (list %beginning %end))
-	  )
+    (move-to-parent-parenthesis arg)
+    (setq %beginning (1+ (point)))
+    (forward-list)
+    (setq %end (1- (point)))
+    (goto-char (1- (point)))
+    (list %beginning %end)
     )
   )
 
-;; check that both previous and next parenthesis are closing to define region.
-;; ( %point ( => opening
-;; ) %point ( => opening
-;; ) %point ) => closing
-
-;; this function makes zap-from-to-char-paren be able to kill nested parentheses from the back.
-;; func {      =>   func {}
-;;   if {
-;;   } %point  
-;; }
-
-(defun check-closing-paren (arg)
-  (let ((%target) (%regexp) (%point (point)))
-    (cond ((or (string= arg "(") (string= arg ")")) (setq %target "(")) 
-	  ((or (string= arg "{") (string= arg "}")) (setq %target "{"))
-	  ((or (string= arg "[") (string= arg "]")) (setq %target "[")))
-    (cond ((string= arg "(") (setq %regexp "[()]")) ;; for regexp
+;; ( %point% ) => left paren is parent.
+;; ( %point% ( => left paren is parent.
+;; ) %point% ) => right paren is parent.
+;; ) %point% ( => find parent. the t of the second cond form is it.
+(defun move-to-parent-parenthesis (arg)
+  (let ((%target arg) (%init (point)) (%regexp))
+    (cond ((string= arg "(") (setq %regexp "[()]"))
 	  ((string= arg "{") (setq %regexp "[{}]"))
-	  ((string= arg "[") (setq %regexp "[][]"))
-	  )
+	  ((string= arg "[") (setq %regexp "[][]")))
     (re-search-backward %regexp)
     (while (nth 3 (syntax-ppss)) ;; ignore commented
       (re-search-backward %regexp))
-    (cond ((not (string= %target (char-to-string (following-char))))
-	   (goto-char %point)
+    (cond ((string= %target (char-to-string (following-char))) ;; backward is (, { or [
+	   ;; do nothing cuz here is parent
+	   )
+	  (t
+	   (goto-char %init)
 	   (re-search-forward %regexp)
 	   (while (nth 3 (syntax-ppss))
-	     (re-search-forward %regexp))
-	   (cond ((not (string= %target (char-to-string (preceding-char))))
-		 (t (goto-char %point)
-		    nil
-		    )))
-	  (t (goto-char %point)
-	     nil
-	     )))
+	     (re-search-forward %regexp)) 
+	   (cond ((string= %target (char-to-string (following-char))) ;; forward is (
+		  ;; do nothing
+		  )
+		 (t (let ((%count 0)) ;; here is in the case of ) %point (
+		      (goto-char %init) 
+		      (while (not (= %count 1))
+			(re-search-backward %regexp)
+			(while (nth 3 (syntax-ppss)) ;; ignore commented
+			  (re-search-backward %regexp))
+			(cond ((string= %target (char-to-string (following-char)))
+			       (setq %count(1+ %count)))
+			      (t (setq %count (1- %count))))
+			))))
+	   ))
     ))
 
-(defun zap-from-to-char (arg)
-  (let ((%point (point)) (%beginning nil) (%end nil))
-    (catch 'no-match-in-line-error
+;; find quoted area in the line
+(defun region-quote (arg)
+  (let ((%init (point)) (%beginning nil) (%end nil))
+    (catch 'no-match-in-line-error ;; break when run into next line
       (search-backward arg)
-      (goto-char %point)
+      (goto-char %init)
       (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
       (setq %beginning (match-end 0))
 
       (search-forward arg)
-      (goto-char %point)
+      (goto-char %init)
       (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
       (setq %end (match-beginning 0))
       
@@ -137,14 +129,16 @@
     )
   )
 
-(defun kill-current-word ()
-  (let ((%beginning) (%end) (%point (point)))
+;; just select word
+(defun region-word ()
+  (let ((%beginning) (%end) (%init (point)))
     (forward-word 1)
     (setq %beginning (point))
     (backward-word 1)
     (setq %end (point))
-    (goto-char %point)
+    (goto-char %init)
     (list %beginning %end)
     )
   )
+
 (provide 'ciel)
