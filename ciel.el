@@ -78,10 +78,23 @@
 ;; ) %point% ) => right paren is parent.
 ;; ) %point% ( => find parent. the t of the second cond form is it.
 (defun move-to-parent-parenthesis (arg)
-  (let ((%target arg) (%init (point)) (%regexp))
-    (cond ((string= arg "(") (setq %regexp "[()]"))
-	  ((string= arg "{") (setq %regexp "[{}]"))
-	  ((string= arg "[") (setq %regexp "[][]")))
+  (let ((%target arg) (%init (point)) (%regexp) (%pair))
+    (catch 'process 
+    (cond ((string= %target "(") (setq %regexp "[()]"))
+	  ((string= %target "{") (setq %regexp "[{}]"))
+	  ((string= %target "[") (setq %regexp "[][]")))
+    (cond ((string= %target "(") (setq %pair ")"))
+	  ((string= %target "{") (setq %pair "}"))
+	  ((string= %target "[") (setq %pair "]")))
+
+    (when (string= %target (char-to-string (following-char)))
+      (throw 'process "end here")
+      )
+    (when (string= %pair (char-to-string (preceding-char)))
+      (backward-list)
+      (throw 'process "end here")
+      )
+    
     (re-search-backward %regexp)
     (while (nth 3 (syntax-ppss)) ;; ignore commented
       (re-search-backward %regexp))
@@ -107,7 +120,7 @@
 			      (t (setq %count (1- %count))))
 			))))
 	   ))
-    ))
+    )))
 
 ;; find quoted area in the line
 (defun region-quote (arg)
