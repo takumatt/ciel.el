@@ -59,6 +59,7 @@
       (copy-region-as-kill (car %region) (cadr %region)))
     )
   )
+
 (global-set-key "\C-co" 'co)
 
 (defun region-paren (arg)
@@ -88,12 +89,10 @@
 	  ((string= %target "[") (setq %pair "]")))
 
     (when (string= %target (char-to-string (following-char)))
-      (throw 'process "end here")
-      )
+      (throw 'process nil)) ;; end here
     (when (string= %pair (char-to-string (preceding-char)))
       (backward-list)
-      (throw 'process "end here")
-      )
+      (throw 'process nil)) ;; end here
     
     (re-search-backward %regexp)
     (while (nth 3 (syntax-ppss)) ;; ignore commented
@@ -122,23 +121,83 @@
 	   ))
     )))
 
-;; find quoted area in the line
-(defun region-quote (arg)
-  (let ((%init (point)) (%beginning nil) (%end nil))
-    (catch 'no-match-in-line-error ;; break when run into next line
-      (search-backward arg)
-      (goto-char %init)
-      (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-      (setq %beginning (match-end 0))
 
-      (search-forward arg)
-      (goto-char %init)
-      (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-      (setq %end (match-beginning 0))
-      
-      (goto-char %beginning)
-      (list %beginning %end)
-      )
+(defun region-quote (arg)
+  (let ((%init (point)) (%beg nil) (%end nil) (%fw 0) (%bw 0) (%cur (point)))
+    (search-backward arg nil t 1)
+    (goto-char %init)
+    (cond ((string= arg (char-to-string (following-char)))
+	  (while (< (line-beginning-position) (match-beginning 0))
+	    (setq %cur (match-beginning 0))
+	    (setq %bw (1+ %bw))
+	    (goto-char %cur)
+	    (search-backward arg)
+	    (goto-char %init)
+	    )
+
+	  (setq %cur %init)
+
+	  ;; FIX: something wrong
+	  (search-forward arg)
+	  (goto-char %init)
+	  (while (> (line-end-position) (match-beginning 0))
+	    (setq %cur (match-end 0))
+	    (setq %fw (1+ %fw))
+	    (goto-char %cur)
+	    (search-forward arg)
+	    (goto-char %init)
+	    )
+
+	  (goto-char %init)
+	  (cond ((> %fw %bw)
+		 (catch 'no-match-in-line-error ;; break when run into next line
+		   (forward-char) ;; to avoid matching head
+		   (search-forward arg)
+		   (goto-char %init)
+		   (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
+		   (setq %end (match-beginning 0))
+
+		   (forward-char)
+		   (search-backward arg)
+		   (goto-char %init)
+		   (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
+		   (setq %beginning (match-end 0))
+		   
+		   (goto-char %beginning)
+		   (list %beginning %end)
+		   ))
+		(t
+		 (catch 'no-match-in-line-error ;; break when run into next line
+		   (search-backward arg)
+		   (goto-char %init)
+		   (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
+		   (setq %beginning (match-end 0))
+
+		   (search-forward arg)
+		   (goto-char %init)
+		   (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
+		   (setq %end (match-beginning 0))
+		   
+		   (goto-char %beginning)
+		   (list %beginning %end)
+		   )))
+	  )
+	  (t
+	   (goto-char %init)
+	   (catch 'no-match-in-line-error ;; break when run into next line
+	     (search-backward arg)
+	     (goto-char %init)
+	     (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
+	     (setq %beginning (match-end 0))
+
+	     (search-forward arg)
+	     (goto-char %init)
+	     (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
+	     (setq %end (match-beginning 0))
+	     
+	     (goto-char %beginning)
+	     (list %beginning %end)
+	     )))
     )
   )
 
