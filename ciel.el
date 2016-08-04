@@ -1,7 +1,18 @@
-;; 
-;; The MIT License (MIT)
+;;; ciel.el --- A command that is clone of "ci" in vim.
 
-;; Copyright (c) 2016 Takuma Matsushita
+;; Copyright (C) 2016 Takuma Matsushita
+
+;; Author: Takuma Matsushita <cs14095@gmail.com>
+;; Created: 2 Jul 2016
+;; Version: 0.0.1
+;; Keywords: convinience
+;; Homepage: https://github.com/cs14095/ciel.el
+;; Package-Requires: ((emacs "24"))
+
+
+;; This file is not part of GNU Emacs
+
+;; The MIT License (MIT)
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to deal
@@ -9,10 +20,10 @@
 ;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 ;; copies of the Software, and to permit persons to whom the Software is
 ;; furnished to do so, subject to the following conditions:
-
+;;
 ;; The above copyright notice and this permission notice shall be included in
 ;; all copies or substantial portions of the Software.
-
+;;
 ;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +31,44 @@
 ;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ;; THE SOFTWARE.
+
+;;; Commentary:
+
+;; You can use ci", ci', ci(, ci{ and ciw entering `Ctrl-c, i`.
+;; Also you can copy them with `Ctrl-c, o` instead of `Ctrl-c, i`.
+;; This is standalone package and you can probably use any mode.
+
+;; **Now at work! I highly recommend updating every week!**
+;; I decided to remove cit on master branch, because it's too heavy.
+;; Other command is still available, but some code is broken.
+;; I will fix in summer vacation...
+
+;; ## Usage
+
+;; Press `Ctrl-c, i` or `Ctrl-c, o` and enter available character.
+;; Watch example or vim usage.
+
+;; ## Example
+
+;; 	Ctrl-c, i, w => kill a word
+;; 	Ctrl-c, i, [<>] => kill inside <>
+;; 	Ctrl-c, i, ' => kill inside ''
+;; 	Ctrl-c, i, " => kill inside ""
+;; 	Ctrl-c, i, [()] => kill inside ()
+;; 	Ctrl-c, i, [{}] => kill inside {}
 ;;
+;; 	Ctrl-c, o, w => copy a word
+;; 	Ctrl-c, o, [<>] => copy inside <>
+;; 	Ctrl-c, o, ' => copy inside ''
+;; 	Ctrl-c, o, " => copy inside ""
+;; 	Ctrl-c, o, [()] => copy inside ()
+;; 	Ctrl-c, o, [{}] => copy inside {}
+
+;; you can also kill nested parentheses as you can see.
+;; https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif
+
+
+;;; Code:
 
 (defun ci (arg)
   (interactive "sci: ")
@@ -72,11 +120,13 @@
     )
   )
 
-;; ( %point% ) => left paren is parent.
-;; ( %point% ( => left paren is parent.
-;; ) %point% ) => right paren is parent.
-;; ) %point% ( => find parent. the t of the second cond form is it.
 (defun move-to-parent-parenthesis (arg)
+  "
+
+( %point% ) => left paren is parent.
+( %point% ( => left paren is parent.
+) %point% ) => right paren is parent.
+) %point% ( => find parent.  the t of the second cond form is it."
   (let ((%target arg) (%init (point)) (%regexp) (%pair))
     (catch 'process 
     (cond ((string= %target "(") (setq %regexp "[()]"))
@@ -201,3 +251,4 @@
   )
 
 (provide 'ciel)
+;;; ciel.el ends here
