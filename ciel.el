@@ -70,7 +70,19 @@
 
 ;;; Code:
 
-(defun ci (arg)
+(defvar ciel-mode-map nil
+  "Keymap used in ciel-mode.")
+(unless ciel-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c i") 'ciel-ci)
+    (define-key map (kbd "C-c o") 'ciel-co)
+    (setq ciel-mode-map map)))
+
+(defvar ciel-mode-lighter " ci")
+
+;;;###autoload
+(defun ciel-ci (arg)
+  ""
   (interactive "sci: ")
   (let ((%region))
     (cond ((or (string= arg "(") (string= arg ")")) (setq %region (region-paren "(")))
@@ -86,10 +98,10 @@
       (kill-region (car %region) (cadr %region)))
     )
   )
-(global-set-key "\C-ci" 'ci)
 
-;; COpy inside
-(defun co (arg)
+;;;###autoload
+(defun ciel-co (arg)
+  "COpy inside."
   (interactive "sco: ")
   (let ((%region))
     (cond ((or (string= arg "(") (string= arg ")")) (setq %region (region-paren "(")))
@@ -106,7 +118,13 @@
     )
   )
 
-(global-set-key "\C-co" 'co)
+;;;###autoload
+(define-minor-mode ciel-mode
+  "Minor mode for ciel."
+  :lighter ciel-mode-lighter
+  :global t
+  ciel-mode-map
+  :group 'ciel)
 
 (defun region-paren (arg)
   (interactive "s") 
