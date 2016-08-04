@@ -25,10 +25,9 @@
 (defun ci (arg)
   (interactive "sci: ")
   (let ((%region))
-    (cond ((or (or (string= arg "(") (string= arg ")"))
-	       (or (string= arg "[") (string= arg "]"))
-	       (or (string= arg "{") (string= arg "}"))) ;; ), ] and } doesn't work. I have no idea.
-	   (setq %region (region-paren arg)))
+    (cond ((or (string= arg "(") (string= arg ")")) (setq %region (region-paren "(")))
+	  ((or (string= arg "[") (string= arg "]")) (setq %region (region-paren "[")))
+	  ((or (string= arg "{") (string= arg "}")) (setq %region (region-paren "{")))
 	  ((or (string= arg "\"")
 	       (string= arg "\'")
 	       (string= arg "\`"))
@@ -45,10 +44,9 @@
 (defun co (arg)
   (interactive "sco: ")
   (let ((%region))
-    (cond ((or (or (string= arg "(") (string= arg ")"))
-	       (or (string= arg "[") (string= arg "]"))
-	       (or (string= arg "{") (string= arg "}")))
-	   (setq %region (region-paren arg)))
+    (cond ((or (string= arg "(") (string= arg ")")) (setq %region (region-paren "(")))
+	  ((or (string= arg "[") (string= arg "]")) (setq %region (region-paren "[")))
+	  ((or (string= arg "{") (string= arg "}")) (setq %region (region-paren "{")))
 	  ((or (string= arg "\"")
 	       (string= arg "\'")
 	       (string= arg "\`"))
@@ -123,33 +121,22 @@
 
 
 (defun region-quote (arg)
-  (let ((%init (point)) (%beg nil) (%end nil) (%fw 0) (%bw 0) (%cur (point)))
+  (let ((%init (point)) (%beg nil) (%end nil) (%fw 0) (%cur (point)))
     (search-backward arg nil t 1)
     (goto-char %init)
     (cond ((string= arg (char-to-string (following-char)))
-	  (while (< (line-beginning-position) (match-beginning 0))
-	    (setq %cur (match-beginning 0))
-	    (setq %bw (1+ %bw))
-	    (goto-char %cur)
-	    (search-backward arg)
-	    (goto-char %init)
-	    )
-
-	  (setq %cur %init)
-
-	  ;; FIX: something wrong
-	  (search-forward arg)
+	  (search-forward arg nil t 1)
 	  (goto-char %init)
 	  (while (> (line-end-position) (match-beginning 0))
 	    (setq %cur (match-end 0))
 	    (setq %fw (1+ %fw))
 	    (goto-char %cur)
-	    (search-forward arg)
+	    (search-forward arg nil t 1)
 	    (goto-char %init)
 	    )
-
+	  
 	  (goto-char %init)
-	  (cond ((> %fw %bw)
+	  (cond ((= 0 (mod %fw 2))
 		 (catch 'no-match-in-line-error ;; break when run into next line
 		   (forward-char) ;; to avoid matching head
 		   (search-forward arg)
