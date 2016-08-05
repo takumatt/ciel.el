@@ -83,7 +83,8 @@
 ;;;###autoload
 (defun ciel-ci (arg)
   ""
-  (interactive "sci: ")
+  (interactive "cci: ")
+  (when (integerp arg) (setq arg (char-to-string arg)))
   (let ((%region))
     (cond ((or (string= arg "(") (string= arg ")")) (setq %region (region-paren "(")))
 	  ((or (string= arg "[") (string= arg "]")) (setq %region (region-paren "[")))
@@ -102,7 +103,8 @@
 ;;;###autoload
 (defun ciel-co (arg)
   "COpy inside."
-  (interactive "sco: ")
+  (interactive "cco: ")
+  (when (integerp arg) (setq arg (char-to-string arg)))
   (let ((%region))
     (cond ((or (string= arg "(") (string= arg ")")) (setq %region (region-paren "(")))
 	  ((or (string= arg "[") (string= arg "]")) (setq %region (region-paren "[")))
