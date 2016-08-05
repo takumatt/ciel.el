@@ -195,25 +195,25 @@
 		   (search-backward arg)
 		   (goto-char %init)
 		   (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-		   (setq %beginning (match-end 0))
+		   (setq %beg (match-end 0))
 		   
-		   (goto-char %beginning)
-		   (list %beginning %end)
+		   (goto-char %beg)
+		   (list %beg %end)
 		   ))
 		(t
 		 (catch 'no-match-in-line-error ;; break when run into next line
 		   (search-backward arg)
 		   (goto-char %init)
 		   (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-		   (setq %beginning (match-end 0))
+		   (setq %beg (match-end 0))
 
 		   (search-forward arg)
 		   (goto-char %init)
 		   (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
 		   (setq %end (match-beginning 0))
 		   
-		   (goto-char %beginning)
-		   (list %beginning %end)
+		   (goto-char %beg)
+		   (list %beg %end)
 		   )))
 	  )
 	  (t
@@ -222,28 +222,28 @@
 	     (search-backward arg)
 	     (goto-char %init)
 	     (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-	     (setq %beginning (match-end 0))
+	     (setq %beg (match-end 0))
 
 	     (search-forward arg)
 	     (goto-char %init)
 	     (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
 	     (setq %end (match-beginning 0))
 	     
-	     (goto-char %beginning)
-	     (list %beginning %end)
+	     (goto-char %beg)
+	     (list %beg %end)
 	     )))
     )
   )
 
 ;; just select word
 (defun ciel--region-word ()
-  (let ((%beginning) (%end) (%init (point)))
+  (let ((%beg) (%end) (%init (point)))
     (forward-word 1)
-    (setq %beginning (point))
+    (setq %beg (point))
     (backward-word 1)
     (setq %end (point))
     (goto-char %init)
-    (list %beginning %end)
+    (list %beg %end)
     )
   )
 
