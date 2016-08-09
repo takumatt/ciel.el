@@ -42,6 +42,27 @@
 ;; I'm not going to add cit againg for now.
 ;; Other command is still available and I think it's almost complete.
 
+;; ## Installation
+
+;; Download ci.el somewhere.
+;; For example:
+
+;; cd ~/.emacs.d/elisp/
+;; git clone https://github.com/cs14095/ciel.el
+
+;; Then add the following in your .emacs file:
+
+;; (setq load-path (cons "~/.emacs.d/elisp/ciel.el" load-path))
+;; (require 'ciel)
+;; (global-set-key "\C-ci" 'ciel-ci)
+;; (global-set-key "\C-co" 'ciel-co)
+
+;; or you installed by melpa, then just add
+
+;; (global-set-key "\C-ci" 'ciel-ci)
+;; (global-set-key "\C-co" 'ciel-co)
+
+
 ;; ## Usage
 
 ;; Press `Ctrl-c, i` or `Ctrl-c, o` and enter available character.
