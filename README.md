@@ -24,7 +24,13 @@ Then add the following in your .emacs file:
 
 	(setq load-path (cons "~/.emacs.d/elisp/ciel.el" load-path))
 	(require 'ciel)
-	(ciel-mode t)
+	(global-set-key "\C-ci" 'ciel-ci)
+	(global-set-key "\C-co" 'ciel-co)
+	
+or you installed by melpa, then just add
+
+	(global-set-key "\C-ci" 'ciel-ci)
+	(global-set-key "\C-co" 'ciel-co)
 
 
 ## Usage
