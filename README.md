@@ -3,7 +3,7 @@
 An emacs command that is clone of "ci" in vim.  
 You can use `ci"`, `ci(`, `ciw` and so on with `Ctrl-c, i`.    
 Also you can copy them with `Ctrl-c, o` instead of `Ctrl-c, i`.  
-This is standalone package and you can probably use on any mode.  
+This is standalone package and you can probably use in any mode.  
 
 ![circleanimationmuvie](https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif) 
 
@@ -21,7 +21,7 @@ Other command is still available and I think it's almost complete.
 
 ## Installation
 
-Download ci.el somewhere.  
+Download ciel.el somewhere.  
 For example:
 
 	cd ~/.emacs.d/elisp/
