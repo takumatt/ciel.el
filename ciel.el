@@ -131,6 +131,87 @@
       (copy-region-as-kill (car region) (cadr region)))
     ))
 
+;;;###autoload
+(defun ciel-kill-region-paren (arg)
+  (interactive)
+  (catch 'not-acceptable-error
+    (when (not (or (string= arg "(") (string= arg ")")
+		   (string= arg "[") (string= arg "]")
+		   (string= arg "{") (string= arg "}")))
+      (throw 'not-acceptable-error))
+    (when (string= arg ")") (setq arg "("))
+    (when (string= arg "]") (setq arg "["))
+    (when (string= arg "}") (setq arg "{"))
+    (let ((region))
+      (setq region (ciel--region-paren arg))
+      (when region
+	(kill-region (car region) (cadr region)))
+      )))
+
+;;;###autoload
+(defun ciel-copy-region-paren (arg)
+  (interactive)
+  (catch 'not-acceptable-error
+    (when (not (or (string= arg "(") (string= arg ")")
+		   (string= arg "[") (string= arg "]")
+		   (string= arg "{") (string= arg "}")))
+      (throw 'not-acceptable-error))
+    (when (string= arg ")" (setq arg "(")))
+    (when (string= arg "]") (setq arg "["))
+    (when (string= arg "}") (setq arg "{"))
+    (let ((region))
+      (setq region (ciel--region-paren arg))
+      (when region
+	(copy-region-as-kill (car region) (cadr region)))
+      )))
+
+;;;###autoload
+(defun ciel-kill-region-quote (arg)
+  (interactive)
+  (catch 'not-acceptable-error
+    (when (not (or (string= arg "\"")
+		   (string= arg "\'")
+		   (string= arg "\`")))
+      (throw 'not-acceptable-error))
+    (let ((region))
+      (setq region (ciel--region-quote arg))
+      (when region
+	(kill-region (car region) (cadr region)))
+    )))
+
+;;;###autoload
+(defun ciel-copy-region-quote (arg)
+    (interactive)
+    (catch 'not-acceptable-error
+    (when (not (or (string= arg "\"")
+		   (string= arg "\'")
+		   (string= arg "\`")))
+      (throw 'not-acceptable-error))
+    (let ((region))
+      (setq region (ciel--region-quote arg))
+      (when region
+	(copy-region-as-kill (car region) (cadr region)))
+    )))
+
+;;;###autoload
+(defun ciel-kill-a-word ()
+  (interactive)
+  (let ((region))
+    (setq region (ciel--region-word))
+    (when region
+      (kill-region (car region) (cadr region)))
+    ))
+
+;;;###autoload
+(defun ciel-copy-a-word ()
+    (interactive)
+    (let ((region))
+    (setq region (ciel--region-word))
+    (when region
+      (copy-region-as-kill (car region) (cadr region)))
+    ))
+
+
 (defun ciel--region-paren (arg)
   (let ((init (point)) (beg (point)) (end (point)) (fw 0) (bw 0) (regexp) (pair) (target arg))
     (cond ((string= target "(") (setq regexp "[()]")) ;; for regexp
