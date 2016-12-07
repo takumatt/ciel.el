@@ -36,7 +36,7 @@
 
 ;; You can use ci", ci(, ciw and so on with Ctrl-c, i.
 ;; Also you can copy them with Ctrl-c, o instead of Ctrl-c, i.
-;; This is standalone package and you can probably use in any mode.
+;; This is standalone package and you can probably use any mode.
 
 ;; I decided to remove cit on master branch, because it's too huge.
 ;; I'm not going to add cit againg for now.
@@ -44,38 +44,24 @@
 
 ;; ## Installation
 
-;; Download ciel.el somewhere.  
+;; Download ci.el somewhere.
 ;; For example:
 
-;; 	cd ~/.emacs.d/elisp/
-;; 	git clone https://github.com/cs14095/ciel.el
-	
-;; or download from melpa.
-
-;; 	M-x package-install ciel
+;; cd ~/.emacs.d/elisp/
+;; git clone https://github.com/cs14095/ciel.el
 
 ;; Then add the following in your .emacs file:
 
-;; 	(setq load-path (cons "~/.emacs.d/elisp/ciel.el" load-path))
-;; 	(require 'ciel)
-;; 	(global-set-key "\C-ci" 'ciel-ci)
-;; 	(global-set-key "\C-co" 'ciel-co)
-	
+;; (setq load-path (cons "~/.emacs.d/elisp/ciel.el" load-path))
+;; (require 'ciel)
+;; (global-set-key "\C-ci" 'ciel-ci)
+;; (global-set-key "\C-co" 'ciel-co)
+
 ;; or you installed by melpa, then just add
 
-;; 	(global-set-key "\C-ci" 'ciel-ci)
-;; 	(global-set-key "\C-co" 'ciel-co)
-	
-;; additionaly you want to bind spacific command, then add
+;; (global-set-key "\C-ci" 'ciel-ci)
+;; (global-set-key "\C-co" 'ciel-co)
 
-;; 	(global-set-key "favorite key" 'ciel-kill-a-word)
-;; 	(global-set-key "favorite key" 'ciel-copy-a-word)
-;; 	(global-set-key "favorite key" '(lambda ()
-;;                                        (interactive) 
-;;                                        (ciel-kill-region-quote "favorite quote")
-;; 	(global-set-key "favorite key" '(lambda ()
-;;                                        (interactive)
-;;                                        (ciel-kill-region-paren "favorite parentheses")
 
 ;; ## Usage
 
@@ -105,14 +91,6 @@
 ;; You can also kill the nested parentheses as you can see.
 ;; https://raw.githubusercontent.com/cs14095/cs14095.github.io/master/ci-el.gif
 
-;; ## Additionaly Functions
-;;  - ciel-kill-region-paren : kill enclosed region in parentheses by parenthesis given as args 
-;;  - ciel-copy-region-paren : copy enclosed region in parentheses by parenthesis given as args 
-;;  - ciel-kill-region-quote : kill quoted region by quote given as args
-;;  - ciel-copy-region-quote : copy quoted region by quote given as args
-;;  - ciel-kill-a-word : just kill a word
-;;  - ciel-copy-a-word : just copy a word
-
 
 ;;; Code:
 
@@ -139,7 +117,7 @@
 (defun ciel-co (arg)
   "COpy inside."
   (interactive "cco: ")
-  (when (integerp arg) (setq arg (char-to-string arg)))
+  (when (integerp arg) (setq arg (char-to-string arg))) ;; char to string
   (let ((region))
     (cond ((or (string= arg "(") (string= arg ")")) (setq region (ciel--region-paren "(")))
 	  ((or (string= arg "[") (string= arg "]")) (setq region (ciel--region-paren "[")))
@@ -152,6 +130,23 @@
     (when region
       (copy-region-as-kill (car region) (cadr region)))
     ))
+
+;;;###autoload
+(defun ciel-copy-to-register (arg reg)
+  (interactive "cParentheses or quote: \ncRegister: ")
+    (when (integerp arg) (setq arg (char-to-string arg))) ;; char to string
+  (let ((region))
+    (cond ((or (string= arg "(") (string= arg ")")) (setq region (ciel--region-paren "(")))
+	  ((or (string= arg "[") (string= arg "]")) (setq region (ciel--region-paren "[")))
+	  ((or (string= arg "{") (string= arg "}")) (setq region (ciel--region-paren "{")))
+	  ((or (string= arg "\"")
+	       (string= arg "\'")
+	       (string= arg "\`"))
+	   (setq region (ciel--region-quote arg)))
+	  ((string= arg "w") (setq region (ciel--region-word))))
+    (when region
+      (copy-to-register reg (car region) (cadr region)))
+  ))
 
 ;;;###autoload
 (defun ciel-kill-region-paren (arg)
@@ -307,7 +302,7 @@
 		   (list beg end)
 		   ))
 		(t
-		 (catch 'no-match-in-line-error ;; break when run into next line
+  		 (catch 'no-match-in-line-error ;; break when run into next line
 		   (search-backward arg)
 		   (goto-char init)
 		   (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
