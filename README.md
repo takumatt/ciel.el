@@ -17,6 +17,7 @@ Other command is still available and I think it's almost complete.
  - Possible to kill the nested parentheses if cursor is inside.
  - No dependencies.
  - Works in any mode.
+ - Support copying to register.
 
 
 ## Installation
@@ -37,11 +38,13 @@ Then add the following in your .emacs file:
 	(require 'ciel)
 	(global-set-key "\C-ci" 'ciel-ci)
 	(global-set-key "\C-co" 'ciel-co)
+	(global-set-key "\C-crs" 'ciel-copy-to-register)
 	
 or you installed by melpa, then just add
 
 	(global-set-key "\C-ci" 'ciel-ci)
 	(global-set-key "\C-co" 'ciel-co)
+	(global-set-key "\C-crs" 'ciel-copy-to-register)
 	
 additionaly you want to bind spacific command, then add
 
@@ -79,6 +82,8 @@ See example or vim usage for more information.
 	Ctrl-c, o, [{}] => copy inside {}  
 	Ctrl-c, o, [<>] => copy inside <>  
 	Ctrl-c, o, [[]] => copy inside []  
+	
+	Ctrl-c, r, s => copy to register
 
 You can also kill the nested parentheses as you can see.
 
