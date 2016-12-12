@@ -151,11 +151,11 @@
 ;;;###autoload
 (defun ciel-kill-region-paren (arg)
   (interactive)
-  (catch 'not-acceptable-error
+  (catch 'non-acceptable-error
     (when (not (or (string= arg "(") (string= arg ")")
 		   (string= arg "[") (string= arg "]")
 		   (string= arg "{") (string= arg "}")))
-      (throw 'not-acceptable-error))
+      (throw 'non-acceptable-error))
     (when (string= arg ")") (setq arg "("))
     (when (string= arg "]") (setq arg "["))
     (when (string= arg "}") (setq arg "{"))
@@ -168,11 +168,11 @@
 ;;;###autoload
 (defun ciel-copy-region-paren (arg)
   (interactive)
-  (catch 'not-acceptable-error
+  (catch 'non-acceptable-error
     (when (not (or (string= arg "(") (string= arg ")")
 		   (string= arg "[") (string= arg "]")
 		   (string= arg "{") (string= arg "}")))
-      (throw 'not-acceptable-error))
+      (throw 'non-acceptable-error))
     (when (string= arg ")" (setq arg "(")))
     (when (string= arg "]") (setq arg "["))
     (when (string= arg "}") (setq arg "{"))
@@ -185,11 +185,11 @@
 ;;;###autoload
 (defun ciel-kill-region-quote (arg)
   (interactive)
-  (catch 'not-acceptable-error
+  (catch 'non-acceptable-error
     (when (not (or (string= arg "\"")
 		   (string= arg "\'")
 		   (string= arg "\`")))
-      (throw 'not-acceptable-error))
+      (throw 'non-acceptable-error))
     (let ((region))
       (setq region (ciel--region-quote arg))
       (when region
@@ -199,11 +199,11 @@
 ;;;###autoload
 (defun ciel-copy-region-quote (arg)
     (interactive)
-    (catch 'not-acceptable-error
+    (catch 'non-acceptable-error
     (when (not (or (string= arg "\"")
 		   (string= arg "\'")
 		   (string= arg "\`")))
-      (throw 'not-acceptable-error))
+      (throw 'non-acceptable-error))
     (let ((region))
       (setq region (ciel--region-quote arg))
       (when region
@@ -227,7 +227,6 @@
     (when region
       (copy-region-as-kill (car region) (cadr region)))
     ))
-
 
 (defun ciel--region-paren (arg)
   (let ((init (point)) (beg (point)) (end (point)) (fw 0) (bw 0) (regexp) (pair) (target arg))
