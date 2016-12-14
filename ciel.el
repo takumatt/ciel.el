@@ -107,18 +107,16 @@
 	       (string= arg "\'")
 	       (string= arg "\`"))
 	   (setq region (ciel--region-quote arg)))
-	  ((string= arg "w") (setq region (ciel--region-word)))
-	  )
+	  ((string= arg "w") (setq region (ciel--region-word))))
     (when region
-      (kill-region (car region) (cadr region)))
-    ))
+      (kill-region (car region) (cadr region)))))
 
 ;;;###autoload
 (defun ciel-co (arg)
   "COpy inside."
   (interactive "cco: ")
   (when (integerp arg) (setq arg (char-to-string arg))) ;; char to string
-  (let ((region))
+  (let ((region) (init (point)))
     (cond ((or (string= arg "(") (string= arg ")")) (setq region (ciel--region-paren "(")))
 	  ((or (string= arg "[") (string= arg "]")) (setq region (ciel--region-paren "[")))
 	  ((or (string= arg "{") (string= arg "}")) (setq region (ciel--region-paren "{")))
@@ -129,13 +127,13 @@
 	  ((string= arg "w") (setq region (ciel--region-word))))
     (when region
       (copy-region-as-kill (car region) (cadr region)))
-    ))
+    (goto-char init)))
 
 ;;;###autoload
 (defun ciel-copy-to-register (arg reg)
   (interactive "cParentheses or quote: \ncRegister: ")
     (when (integerp arg) (setq arg (char-to-string arg))) ;; char to string
-  (let ((region))
+  (let ((region) (init (point)))
     (cond ((or (string= arg "(") (string= arg ")")) (setq region (ciel--region-paren "(")))
 	  ((or (string= arg "[") (string= arg "]")) (setq region (ciel--region-paren "[")))
 	  ((or (string= arg "{") (string= arg "}")) (setq region (ciel--region-paren "{")))
@@ -146,7 +144,7 @@
 	  ((string= arg "w") (setq region (ciel--region-word))))
     (when region
       (copy-to-register reg (car region) (cadr region)))
-  ))
+    (goto-char init)))
 
 ;;;###autoload
 (defun ciel-kill-region-paren (arg)
@@ -162,8 +160,7 @@
     (let ((region))
       (setq region (ciel--region-paren arg))
       (when region
-	(kill-region (car region) (cadr region)))
-      )))
+	(kill-region (car region) (cadr region))))))
 
 ;;;###autoload
 (defun ciel-copy-region-paren (arg)
@@ -173,14 +170,14 @@
 		   (string= arg "[") (string= arg "]")
 		   (string= arg "{") (string= arg "}")))
       (throw 'non-acceptable-error))
-    (when (string= arg ")" (setq arg "(")))
+    (when (string= arg ")") (setq arg "("))
     (when (string= arg "]") (setq arg "["))
     (when (string= arg "}") (setq arg "{"))
-    (let ((region))
+    (let ((region) (init (point)))
       (setq region (ciel--region-paren arg))
       (when region
 	(copy-region-as-kill (car region) (cadr region)))
-      )))
+      (goto-char init))))
 
 ;;;###autoload
 (defun ciel-kill-region-quote (arg)
@@ -193,8 +190,7 @@
     (let ((region))
       (setq region (ciel--region-quote arg))
       (when region
-	(kill-region (car region) (cadr region)))
-    )))
+	(kill-region (car region) (cadr region))))))
 
 ;;;###autoload
 (defun ciel-copy-region-quote (arg)
@@ -204,11 +200,11 @@
 		   (string= arg "\'")
 		   (string= arg "\`")))
       (throw 'non-acceptable-error))
-    (let ((region))
+    (let ((region) (init (point)))
       (setq region (ciel--region-quote arg))
       (when region
 	(copy-region-as-kill (car region) (cadr region)))
-    )))
+      (goto-char init))))
 
 ;;;###autoload
 (defun ciel-kill-a-word ()
@@ -216,17 +212,16 @@
   (let ((region))
     (setq region (ciel--region-word))
     (when region
-      (kill-region (car region) (cadr region)))
-    ))
+      (kill-region (car region) (cadr region)))))
 
 ;;;###autoload
 (defun ciel-copy-a-word ()
     (interactive)
-    (let ((region))
+    (let ((region) (init (point)))
     (setq region (ciel--region-word))
     (when region
       (copy-region-as-kill (car region) (cadr region)))
-    ))
+    (goto-char init)))
 
 (defun ciel--region-paren (arg)
   (let ((init (point)) (beg (point)) (end (point)) (fw 0) (bw 0) (regexp) (pair) (target arg))
@@ -265,8 +260,7 @@
     (setq beg (1+ beg))
     (setq end (1- end))
     (goto-char beg)
-    (list beg end)
-    ))
+    (list beg end init)))
 
 (defun ciel--region-quote (arg)
   (let ((init (point)) (beg nil) (end nil) (fw 0) (cur (point)))
@@ -330,8 +324,7 @@
 	     
 	     (goto-char beg)
 	     (list beg end)
-	     )))
-    ))
+	     )))))
 
 ;; just select a word
 (defun ciel--region-word ()
@@ -341,8 +334,7 @@
     (backward-word 1)
     (setq end (point))
     (goto-char init)
-    (list beg end)
-    ))
+    (list beg end)))
 
 (provide 'ciel)
 ;;; ciel.el ends here
