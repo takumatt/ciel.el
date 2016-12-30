@@ -78,7 +78,7 @@
 ;; 	Ctrl-c, i, [{}] => kill inside {}  
 ;; 	Ctrl-c, i, [<>] => kill inside <>  
 ;; 	Ctrl-c, i, [[]] => kill inside []  
-	
+
 ;; 	Ctrl-c, o, w => copy a word  
 ;; 	Ctrl-c, o, ' => copy inside ''
 ;; 	Ctrl-c, o, " => copy inside ""  
@@ -94,6 +94,20 @@
 
 ;;; Code:
 
+;;; Customization
+
+(defcustom ciel-c-mode nil
+  "Auto indent when killing region encolosed with braces"
+  :type 'boolean
+  :group 'ciel)
+
+;;; Errors
+
+(put 'no-match-paren-error 'error-message "Couldn't find matching parentheses")
+(put 'no-match-quote-error 'error-message "Couldn't find matching quotes")
+
+;; Commands
+
 ;;;###autoload
 (defun ciel-ci (arg)
   "Clear Inside."
@@ -101,15 +115,22 @@
   (when (integerp arg) (setq arg (char-to-string arg)))
   (let ((region))
     (cond ((or (string= arg "(") (string= arg ")")) (setq region (ciel--region-paren "(")))
-	  ((or (string= arg "[") (string= arg "]")) (setq region (ciel--region-paren "[")))
-	  ((or (string= arg "{") (string= arg "}")) (setq region (ciel--region-paren "{")))
-	  ((or (string= arg "\"")
-	       (string= arg "\'")
-	       (string= arg "\`"))
-	   (setq region (ciel--region-quote arg)))
-	  ((string= arg "w") (setq region (ciel--region-word))))
+  	  ((or (string= arg "[") (string= arg "]")) (setq region (ciel--region-paren "[")))
+  	  ((or (string= arg "{") (string= arg "}")) (setq region (ciel--region-paren "{")))
+  	  ((or (string= arg "\"")
+  	       (string= arg "\'")
+  	       (string= arg "\`"))
+  	   (setq region (ciel--region-quote arg)))
+  	  ((string= arg "w") (setq region (ciel--region-word)))
+	  (t (signal 'wrong-type-argument (list arg))))
     (when region
-      (kill-region (car region) (cadr region)))))
+      (kill-region (car region) (cadr region))
+      (when (and ciel-c-mode (or (string= arg "{") (string= arg "}")))
+	(newline)
+	(newline)
+	(indent-according-to-mode)
+	(previous-line)
+	(indent-according-to-mode)))))
 
 ;;;###autoload
 (defun ciel-co (arg)
@@ -124,15 +145,34 @@
 	       (string= arg "\'")
 	       (string= arg "\`"))
 	   (setq region (ciel--region-quote arg)))
-	  ((string= arg "w") (setq region (ciel--region-word))))
+	  ((string= arg "w") (setq region (ciel--region-word)))
+	  (t (signal 'wrong-type-argument (list arg))))
     (when region
       (copy-region-as-kill (car region) (cadr region)))
     (goto-char init)))
 
 ;;;###autoload
+(defun ciel-comment-region (arg)
+  (interactive "cParentheses: ")
+  (when (integerp arg) (setq arg (char-to-string arg))) ;; char to string
+  (when (not (or (string= arg "(") (string= arg ")")
+		 (string= arg "[") (string= arg "]")
+		 (string= arg "{") (string= arg "}")))
+    (signal 'wrong-type-argument (list arg)))
+  (when (string= arg ")") (setq arg "("))
+  (when (string= arg "]") (setq arg "["))
+  (when (string= arg "}") (setq arg "{"))
+  (let ((region))
+    (setq region (ciel--region-paren arg))
+    (message "%s" region)
+    (when region
+      (comment-or-uncomment-region (1- (car region)) (1+ (cadr region)))
+    )))
+
+;;;###autoload
 (defun ciel-copy-to-register (arg reg)
   (interactive "cParentheses or quote: \ncRegister: ")
-    (when (integerp arg) (setq arg (char-to-string arg))) ;; char to string
+  (when (integerp arg) (setq arg (char-to-string arg))) ;; char to string
   (let ((region) (init (point)))
     (cond ((or (string= arg "(") (string= arg ")")) (setq region (ciel--region-paren "(")))
 	  ((or (string= arg "[") (string= arg "]")) (setq region (ciel--region-paren "[")))
@@ -141,7 +181,8 @@
 	       (string= arg "\'")
 	       (string= arg "\`"))
 	   (setq region (ciel--region-quote arg)))
-	  ((string= arg "w") (setq region (ciel--region-word))))
+	  ((string= arg "w") (setq region (ciel--region-word)))
+	  (t (signal 'wrong-type-argument (list arg))))
     (when region
       (copy-to-register reg (car region) (cadr region)))
     (goto-char init)))
@@ -149,66 +190,64 @@
 ;;;###autoload
 (defun ciel-kill-region-paren (arg)
   (interactive)
-  (catch 'non-acceptable-error
-    (when (not (or (string= arg "(") (string= arg ")")
-		   (string= arg "[") (string= arg "]")
-		   (string= arg "{") (string= arg "}")))
-      (throw 'non-acceptable-error))
-    (when (string= arg ")") (setq arg "("))
-    (when (string= arg "]") (setq arg "["))
-    (when (string= arg "}") (setq arg "{"))
-    (let ((region))
-      (setq region (ciel--region-paren arg))
-      (when region
-	(kill-region (car region) (cadr region))))))
+  (when (not (or (string= arg "(") (string= arg ")")
+		 (string= arg "[") (string= arg "]")
+		 (string= arg "{") (string= arg "}")))
+    (signal 'wrong-type-argument (list arg)))
+  (when (string= arg ")") (setq arg "("))
+  (when (string= arg "]") (setq arg "["))
+  (when (string= arg "}") (setq arg "{"))
+  (let ((region))
+    (setq region (ciel--region-paren arg))
+    (when region
+      (kill-region (car region) (cadr region))
+      (when (and ciel-c-mode (or (string= arg "{") (string= arg "}"))) ;; future: customizable
+	(newline)
+	(newline)
+	(indent-according-to-mode)
+	(previous-line)
+	(indent-according-to-mode)))))
 
 ;;;###autoload
 (defun ciel-copy-region-paren (arg)
-  (interactive)
-  (catch 'non-acceptable-error
-    (when (not (or (string= arg "(") (string= arg ")")
-		   (string= arg "[") (string= arg "]")
-		   (string= arg "{") (string= arg "}")))
-      (throw 'non-acceptable-error))
-    (when (string= arg ")") (setq arg "("))
-    (when (string= arg "]") (setq arg "["))
-    (when (string= arg "}") (setq arg "{"))
-    (let ((region) (init (point)))
-      (setq region (ciel--region-paren arg))
-      (when region
-	(copy-region-as-kill (car region) (cadr region)))
-      (goto-char init))))
+  (when (not (or (string= arg "(") (string= arg ")")
+		 (string= arg "[") (string= arg "]")
+		 (string= arg "{") (string= arg "}")))
+    (signal 'wrong-type-argument (list arg)))
+  (when (string= arg ")") (setq arg "("))
+  (when (string= arg "]") (setq arg "["))
+  (when (string= arg "}") (setq arg "{"))
+  (let ((region) (init (point)))
+    (setq region (ciel--region-paren arg))
+    (when region
+      (copy-region-as-kill (car region) (cadr region)))
+    (goto-char init)))
 
 ;;;###autoload
 (defun ciel-kill-region-quote (arg)
-  (interactive)
-  (catch 'non-acceptable-error
-    (when (not (or (string= arg "\"")
-		   (string= arg "\'")
-		   (string= arg "\`")))
-      (throw 'non-acceptable-error))
+  (when (not (or (string= arg "\"")
+		 (string= arg "\'")
+		 (string= arg "\`")))
+    (signal 'wrong-type-argument (list arg)))
     (let ((region))
       (setq region (ciel--region-quote arg))
       (when region
-	(kill-region (car region) (cadr region))))))
+	(kill-region (car region) (cadr region)))))
 
 ;;;###autoload
 (defun ciel-copy-region-quote (arg)
-    (interactive)
-    (catch 'non-acceptable-error
-    (when (not (or (string= arg "\"")
-		   (string= arg "\'")
-		   (string= arg "\`")))
-      (throw 'non-acceptable-error))
-    (let ((region) (init (point)))
-      (setq region (ciel--region-quote arg))
-      (when region
-	(copy-region-as-kill (car region) (cadr region)))
-      (goto-char init))))
+  (when (not (or (string= arg "\"")
+		 (string= arg "\'")
+		 (string= arg "\`")))
+    (signal 'wrong-type-argument (list arg)))
+  (let ((region) (init (point)))
+    (setq region (ciel--region-quote arg))
+    (when region
+      (copy-region-as-kill (car region) (cadr region)))
+    (goto-char init)))
 
 ;;;###autoload
 (defun ciel-kill-a-word ()
-  (interactive)
   (let ((region))
     (setq region (ciel--region-word))
     (when region
@@ -216,8 +255,7 @@
 
 ;;;###autoload
 (defun ciel-copy-a-word ()
-    (interactive)
-    (let ((region) (init (point)))
+  (let ((region) (init (point)))
     (setq region (ciel--region-word))
     (when region
       (copy-region-as-kill (car region) (cadr region)))
@@ -233,101 +271,85 @@
 	  ((string= target "{") (setq pair "}"))
 	  ((string= target "[") (setq pair "]"))
 	  ((string= target "<") (setq pair ">")))
-
     (cond ((string= target (char-to-string (following-char))) (setq beg (point)))
-    	  (t
-    	   (when (string= pair (char-to-string (preceding-char))) (backward-char))
-    	   (while (not (= bw 1))
-    	     (re-search-backward regexp)
-    	     (while (nth 3 (syntax-ppss))
-    	       (re-search-backward regexp))
-    	     (setq beg (point))
-    	     (cond ((string= target (char-to-string (following-char))) (setq bw (1+ bw)))
-    		   (t (setq bw (1- bw)))))))
+	  (t
+	   (when (string= pair (char-to-string (preceding-char))) (backward-char))
+	   (while (not (= bw 1))
+	     (unless (re-search-backward regexp nil t)
+	       (goto-char init)
+	       (signal 'no-match-paren-error (list arg)))
+	     (while (nth 3 (syntax-ppss)) ;; skip commented characters as much as passible
+	       (unless (re-search-backward regexp nil t)
+		 (goto-char init)
+		 (signal 'no-match-paren-error (list arg))))
+	     (setq beg (point))
+	     (cond ((string= target (char-to-string (following-char))) (setq bw (1+ bw)))
+		   (t (setq bw (1- bw)))))))
     (goto-char init)
     (cond ((string= pair (char-to-string (preceding-char))) (setq end (point)))
-    	  (t
+	  (t
 	   (when (string= target (char-to-string (following-char))) (forward-char))
-    	   (while (not (= fw -1))
-    	     (re-search-forward regexp)
-    	     (while (nth 3 (syntax-ppss))
-    	       (re-search-forward regexp))
-    	     (setq end (point))
-    	     (cond ((string= target (char-to-string (preceding-char))) (setq fw (1+ fw)))
-    		   (t (setq fw (1- fw)))))))
-
+	   (while (not (= fw -1))
+	     (unless (re-search-forward regexp nil t)
+	       (goto-char init)
+	       (signal 'no-match-paren-error (list arg)))
+	     (while (nth 3 (syntax-ppss)) ;; skip commented characters as much as passible
+	       (unless (re-search-forward regexp nil t)
+		 (goto-char init)
+		 (signal 'no-match-paren-error (list arg))))
+	     (setq end (point))
+	     (cond ((string= target (char-to-string (preceding-char))) (setq fw (1+ fw)))
+		   (t (setq fw (1- fw)))))))
     ;; adjust pos
     (setq beg (1+ beg))
     (setq end (1- end))
     (goto-char beg)
-    (list beg end init)))
+    (list beg end)))
 
+;; This function undetect next or previous line.
 (defun ciel--region-quote (arg)
-  (let ((init (point)) (beg nil) (end nil) (fw 0) (cur (point)))
-    (search-backward arg nil t 1)
+  (let ((init (point)) (beg) (end) (points-of-quote) (line-end-init (line-end-position)))
+    ;; At first make a asc list that contains points of quotes in line 
+    (beginning-of-line)
+    (setq points-of-quote (search-points-of-quote-inline points-of-quote line-end-init))
+    (when (or (null points-of-quote) (= (length points-of-quote) 1)) ;; case length = 1
+      (goto-char init)
+      (signal 'no-match-quote-error (list arg)))
     (goto-char init)
-    (cond ((string= arg (char-to-string (following-char)))
-	  (search-forward arg nil t 1)
-	  (goto-char init)
-	  (while (> (line-end-position) (match-beginning 0))
-	    (setq cur (match-end 0))
-	    (setq fw (1+ fw))
-	    (goto-char cur)
-	    (search-forward arg nil t 1)
-	    (goto-char init))
-	  
-	  (goto-char init)
-	  (cond ((= 0 (mod fw 2))
-		 (catch 'no-match-in-line-error ;; break when run into next line
-		   (forward-char) ;; to avoid matching head
-		   (search-forward arg)
-		   (goto-char init)
-		   (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-		   (setq end (match-beginning 0))
-
-		   (forward-char)
-		   (search-backward arg)
-		   (goto-char init)
-		   (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-		   (setq beg (match-end 0))
-		   
-		   (goto-char beg)
-		   (list beg end)
-		   ))
-		(t
-  		 (catch 'no-match-in-line-error ;; break when run into next line
-		   (search-backward arg)
-		   (goto-char init)
-		   (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-		   (setq beg (match-end 0))
-
-		   (search-forward arg)
-		   (goto-char init)
-		   (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-		   (setq end (match-beginning 0))
-		   
-		   (goto-char beg)
-		   (list beg end)
-		   ))))
+    (cond ((string= arg (char-to-string (following-char))) ;; init point is on the quote
+	   (let ((diff))
+	     (setq points-of-quote (mapcar #'1- points-of-quote)) ;; to adjust points
+	     (setq diff (- (length points-of-quote) (length (member (point) points-of-quote))))
+	     (cond ((= (mod diff 2) 0)
+		    ;; here is odd-numbered
+		    (setq beg (nth diff points-of-quote))
+		    (setq end (nth (1+ diff) points-of-quote))
+		    (goto-char beg) ;; adjust
+		    (forward-char)
+		    (setq beg (point))
+		    (list beg end))
+		   (t
+		    ;; here is even-numbered
+		    (setq beg (nth (1- diff) points-of-quote))
+		    (setq end (nth diff points-of-quote))
+		    (goto-char beg) ;; adjust
+		    (forward-char)
+		    (setq beg (point))
+		    (list beg end)))))
 	  (t
-	   (goto-char init)
-	   (catch 'no-match-in-line-error ;; break when run into next line
-	     (search-backward arg)
-	     (goto-char init)
-	     (cond ((> (line-beginning-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-	     (setq beg (match-end 0))
+	   (when (or (< (point) (car points-of-quote)) (> (point) (car (last points-of-quote))))
+	     ;; here isn't quoted
+	     (signal 'no-match-quote-error (list arg)))
+	   (setq points-of-quote (mapcar #'1- points-of-quote))
+	   (setq beg (ciel--find-beg init (reverse points-of-quote))) ;; reverse to exec recursive func easily
+	   (setq end (nth (1+ (- (length points-of-quote) (length (member beg points-of-quote)))) points-of-quote)) ;; next of beg in the list
+	   (goto-char beg)
+	   (forward-char)
+	   (setq beg (point))
+	   (list beg end)))))
 
-	     (search-forward arg)
-	     (goto-char init)
-	     (cond ((< (line-end-position) (match-beginning 0)) (throw 'no-match-in-line-error nil)))
-	     (setq end (match-beginning 0))
-	     
-	     (goto-char beg)
-	     (list beg end)
-	     )))))
-
-;; just select a word
 (defun ciel--region-word ()
+  ;; This function just select a word
   (let ((beg) (end) (init (point)))
     (forward-word 1)
     (setq beg (point))
@@ -335,6 +357,26 @@
     (setq end (point))
     (goto-char init)
     (list beg end)))
+
+;;; Utility functions
+
+;; defun* acts like common lisp defun. In this func, defun* to use return-from
+(defun* search-points-of-quote-inline (points-of-quote line-end-init)
+  ;; This function make a asc list that contains points of quote
+  ;; before use this func call (beggining-of-line)
+  (unless (search-forward arg nil t)
+    (return-from search-points-of-quote-inline points-of-quote)) ;; couldn't find quotes anymore
+  (cond ((< (point) line-end-init)
+	 (search-points-of-quote-inline (append points-of-quote (list (point))) line-end-init))
+	(t
+	 points-of-quote)))
+
+(defun ciel--find-beg (target points-of-quote)
+  ;; find matching quote recursively
+  (cond ((> init (car points-of-quote))
+	 (car points-of-quote))
+	(t
+	 (ciel--find-beg target (cdr points-of-quote)))))
 
 (provide 'ciel)
 ;;; ciel.el ends here
