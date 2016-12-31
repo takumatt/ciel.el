@@ -94,6 +94,8 @@
 
 ;;; Code:
 
+(require 'cl)
+
 ;;; Customization
 
 (defcustom ciel-c-mode nil
