@@ -368,7 +368,7 @@
   ;; before use this func call (beggining-of-line)
   (unless (search-forward arg nil t)
     (return-from search-points-of-quote-inline points-of-quote)) ;; couldn't find quotes anymore
-  (cond ((< (point) line-end-init)
+  (cond ((<= (point) line-end-init)
 	 (search-points-of-quote-inline (append points-of-quote (list (point))) line-end-init))
 	(t
 	 points-of-quote)))
