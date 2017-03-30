@@ -94,7 +94,7 @@
 
 ;;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 
 ;;; Customization
 
@@ -166,10 +166,14 @@
   (when (string= arg "}") (setq arg "{"))
   (let ((region))
     (setq region (ciel--region-paren arg))
-    (message "%s" region)
     (when region
-      (comment-or-uncomment-region (1- (car region)) (1+ (cadr region)))
-    )))
+      (when (and ciel-c-mode (or (string= arg "{") (string= arg "}"))) ;; future: customizable
+	(let ((beg) (init (point)))
+	  (goto-char (car region))
+	  (setq beg (line-beginning-position))
+	  (goto-char init)
+	  (setq region (cons beg (cdr region)))))
+      (comment-or-uncomment-region (1- (car region)) (1+ (cadr region))))))
 
 ;;;###autoload
 (defun ciel-copy-to-register (arg reg)
@@ -231,10 +235,10 @@
 		 (string= arg "\'")
 		 (string= arg "\`")))
     (signal 'wrong-type-argument (list arg)))
-    (let ((region))
-      (setq region (ciel--region-quote arg))
-      (when region
-	(kill-region (car region) (cadr region)))))
+  (let ((region))
+    (setq region (ciel--region-quote arg))
+    (when region
+      (kill-region (car region) (cadr region)))))
 
 ;;;###autoload
 (defun ciel-copy-region-quote (arg)
@@ -264,7 +268,7 @@
     (goto-char init)))
 
 (defun ciel--region-paren (arg)
-  (let ((init (point)) (beg (point)) (end (point)) (fw 0) (bw 0) (regexp) (pair) (target arg))
+  (let ((init (point)) (starting-point (point)) (beg (point)) (end (point)) (fw 0) (bw 0) (regexp) (pair) (target arg))
     (cond ((string= target "(") (setq regexp "[()]")) ;; for regexp
 	  ((string= target "{") (setq regexp "[{}]"))
 	  ((string= target "[") (setq regexp "[][]"))
@@ -273,9 +277,20 @@
 	  ((string= target "{") (setq pair "}"))
 	  ((string= target "[") (setq pair "]"))
 	  ((string= target "<") (setq pair ">")))
-    (cond ((string= target (char-to-string (following-char))) (setq beg (point)))
+
+    ;; If show-paren-mode is active, this func adjusts position as we look.
+    ;; HOWEVER, some cursor does not blink cuz it follows current mode.
+    ;; So if you want to delete region which is not blinking, sometimes this func
+    ;; intterupt. It's hard to describe.
+    
+    (when (and (member 'show-paren-mode minor-mode-list)
+	       (string= pair (char-to-string (preceding-char))))
+      (backward-char)
+      (setq starting-point (1- starting-point)))
+    
+    (cond ((string= target (char-to-string (following-char)))
+	   (setq beg (point)))
 	  (t
-	   (when (string= pair (char-to-string (preceding-char))) (backward-char))
 	   (while (not (= bw 1))
 	     (unless (re-search-backward regexp nil t)
 	       (goto-char init)
@@ -285,23 +300,34 @@
 		 (goto-char init)
 		 (signal 'no-match-paren-error (list arg))))
 	     (setq beg (point))
-	     (cond ((string= target (char-to-string (following-char))) (setq bw (1+ bw)))
-		   (t (setq bw (1- bw)))))))
-    (goto-char init)
-    (cond ((string= pair (char-to-string (preceding-char))) (setq end (point)))
+	     (cond ((string= target (char-to-string (following-char)))
+		    (setq bw (1+ bw)))
+		   (t
+		    (setq bw (1- bw)))))))
+
+    (cond ((string= pair (char-to-string (following-char)))
+	   (setq end (point)))
 	  (t
-	   (when (string= target (char-to-string (following-char))) (forward-char))
+	   
+	   ;; when following-char matches the regexp [()], re-search-forward function
+	   ;; move cursor to next character. so to avoid matching current character,
+	   ;; forward-char is needed
+	   
+	   (when (string= target (char-to-string (following-char)))
+	     (forward-char))
 	   (while (not (= fw -1))
 	     (unless (re-search-forward regexp nil t)
 	       (goto-char init)
 	       (signal 'no-match-paren-error (list arg)))
-	     (while (nth 3 (syntax-ppss)) ;; skip commented characters as much as passible
+	      (while (nth 3 (syntax-ppss)) ;; skip commented characters as much as passible
 	       (unless (re-search-forward regexp nil t)
 		 (goto-char init)
 		 (signal 'no-match-paren-error (list arg))))
 	     (setq end (point))
-	     (cond ((string= target (char-to-string (preceding-char))) (setq fw (1+ fw)))
-		   (t (setq fw (1- fw)))))))
+	     (cond ((string= target (char-to-string (preceding-char)))
+		    (setq fw (1+ fw)))
+		   (t
+		    (setq fw (1- fw)))))))
     ;; adjust pos
     (setq beg (1+ beg))
     (setq end (1- end))
@@ -311,29 +337,29 @@
 ;; This function undetect next or previous line.
 (defun ciel--region-quote (arg)
   (let ((init (point)) (beg) (end) (points-of-quote) (line-end-init (line-end-position)))
-    ;; At first make a asc list that contains points of quotes in line 
+    ;; At first make a list that contains points of quotes in line 
     (beginning-of-line)
     (setq points-of-quote (search-points-of-quote-inline points-of-quote line-end-init))
     (when (or (null points-of-quote) (= (length points-of-quote) 1)) ;; case length = 1
       (goto-char init)
       (signal 'no-match-quote-error (list arg)))
     (goto-char init)
-    (cond ((string= arg (char-to-string (following-char))) ;; init point is on the quote
+    (cond ((string= arg (char-to-string (following-char))) ;; case: init point is on the quote
 	   (let ((diff))
 	     (setq points-of-quote (mapcar #'1- points-of-quote)) ;; to adjust points
 	     (setq diff (- (length points-of-quote) (length (member (point) points-of-quote))))
-	     (cond ((= (mod diff 2) 0)
+	     (cond ((cl-oddp diff)
 		    ;; here is odd-numbered
-		    (setq beg (nth diff points-of-quote))
-		    (setq end (nth (1+ diff) points-of-quote))
+		    (setq beg (nth (1- diff) points-of-quote))
+		    (setq end (nth diff points-of-quote))
 		    (goto-char beg) ;; adjust
 		    (forward-char)
 		    (setq beg (point))
 		    (list beg end))
 		   (t
 		    ;; here is even-numbered
-		    (setq beg (nth (1- diff) points-of-quote))
-		    (setq end (nth diff points-of-quote))
+		    (setq beg (nth diff points-of-quote))
+		    (setq end (nth (1+ diff) points-of-quote))
 		    (goto-char beg) ;; adjust
 		    (forward-char)
 		    (setq beg (point))
@@ -343,9 +369,10 @@
 	     ;; here isn't quoted
 	     (signal 'no-match-quote-error (list arg)))
 	   (setq points-of-quote (mapcar #'1- points-of-quote))
+	   
 	   (setq beg (ciel--find-beg init (reverse points-of-quote))) ;; reverse to exec recursive func easily
-	   (setq end (nth (1+ (- (length points-of-quote) (length (member beg points-of-quote)))) points-of-quote)) ;; next of beg in the list
-	   (goto-char beg)
+	   (setq end (cadr (member beg points-of-quote))) ;; end is next of beg
+	   (goto-char beg) ;; adjust
 	   (forward-char)
 	   (setq beg (point))
 	   (list beg end)))))
@@ -363,19 +390,19 @@
 ;;; Utility functions
 
 ;; defun* acts like common lisp defun. In this func, defun* to use return-from
-(defun* search-points-of-quote-inline (points-of-quote line-end-init)
+(cl-defun search-points-of-quote-inline (points-of-quote line-end-init)
   ;; This function make a asc list that contains points of quote
   ;; before use this func call (beggining-of-line)
   (unless (search-forward arg nil t)
-    (return-from search-points-of-quote-inline points-of-quote)) ;; couldn't find quotes anymore
-  (cond ((< (point) line-end-init)
+    (cl-return-from search-points-of-quote-inline points-of-quote)) ;; couldn't find quotes anymore
+  (cond ((<= (point) line-end-init)
 	 (search-points-of-quote-inline (append points-of-quote (list (point))) line-end-init))
 	(t
 	 points-of-quote)))
 
 (defun ciel--find-beg (target points-of-quote)
   ;; find matching quote recursively
-  (cond ((> init (car points-of-quote))
+  (cond ((> target (car points-of-quote))
 	 (car points-of-quote))
 	(t
 	 (ciel--find-beg target (cdr points-of-quote)))))
