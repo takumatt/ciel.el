@@ -305,6 +305,8 @@
 		   (t
 		    (setq bw (1- bw)))))))
 
+    (goto-char starting-point)
+
     (cond ((string= pair (char-to-string (following-char)))
 	   (setq end (point)))
 	  (t
