@@ -131,7 +131,7 @@
 	(newline)
 	(newline)
 	(indent-according-to-mode)
-	(previous-line)
+        (forward-line -1)
 	(indent-according-to-mode)))))
 
 ;;;###autoload
@@ -211,7 +211,7 @@
 	(newline)
 	(newline)
 	(indent-according-to-mode)
-	(previous-line)
+	(forward-line -1)
 	(indent-according-to-mode)))))
 
 ;;;###autoload
